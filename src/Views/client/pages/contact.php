@@ -1,4 +1,4 @@
-<?php partial('hero', ['heroTitle' => 'Liên hệ', 'crumbs' => [['Trang chủ', '/'], ['Liên hệ', null]]]); ?>
+<?php partial('hero', ['heroTitle' => 'Liên hệ', 'crumbs' => [['Trang chủ', url('')], ['Liên hệ', null]]]); ?>
 <div class="container py-5">
     <div class="row g-4">
         <div class="col-lg-5">
@@ -12,7 +12,7 @@
         </div>
         <div class="col-lg-7">
             <div class="bh-panel">
-                <form method="post" action="<?= e(url('/contact')) ?>" novalidate>
+                <form method="post" action="<?= e(url('contact')) ?>" novalidate>
                     <?= csrf_field() ?>
                     <div class="mb-3"><label class="form-label" for="full_name">Họ tên</label><input class="form-control" id="full_name" name="full_name" value="<?= old('full_name') ?>" required><?= form_error('full_name') ?></div>
                     <div class="row g-3 mb-3">

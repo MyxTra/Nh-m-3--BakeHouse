@@ -21,9 +21,9 @@ final class AuthMiddleware implements MiddlewareInterface
             return Response::json(['ok' => false, 'message' => 'Vui lòng đăng nhập.', 'login_url' => '/login'], 401);
         }
 
-        Session::set('intended_url', $_SERVER['REQUEST_URI'] ?? $request->getPath());
+        Session::set('intended_url', $request->getPath());
         Session::flash('warning', 'Vui lòng đăng nhập để tiếp tục.');
 
-        return Response::redirect('/login');
+        return Response::redirect(url('/login'));
     }
 }

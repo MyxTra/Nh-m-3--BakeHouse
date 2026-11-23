@@ -3,7 +3,7 @@
         <div class="bh-auth bh-auth--wide bh-panel">
             <h1 class="bh-auth__title">Đăng ký</h1>
             <p class="bh-auth__sub">Tạo tài khoản để đặt hàng và theo dõi đơn</p>
-            <form method="post" action="<?= e(url('/register')) ?>" novalidate>
+            <form method="post" action="<?= e(url('register')) ?>" novalidate>
                 <?= csrf_field() ?>
                 <div class="row g-3">
                     <div class="col-md-6"><label class="form-label" for="full_name">Họ tên</label>
@@ -17,7 +17,7 @@
                 </div>
                 <div class="form-text mt-2">Mật khẩu tối thiểu 8 ký tự, gồm chữ hoa, chữ thường và số.</div>
                 <button class="bh-btn bh-btn--primary w-100 mt-3" type="submit">Tạo tài khoản</button>
-                <div class="bh-auth__links justify-content-center"><span>Đã có tài khoản? <a href="<?= e(url('/login')) ?>">Đăng nhập</a></span></div>
+                <div class="bh-auth__links justify-content-center"><span>Đã có tài khoản? <a href="<?= e(url('login')) ?>">Đăng nhập</a></span></div>
             </form>
         </div>
     </div>

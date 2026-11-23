@@ -1,4 +1,4 @@
-<?php partial('hero', ['heroTitle' => 'Chính sách bảo mật', 'crumbs' => [['Trang chủ', '/'], ['Chính sách bảo mật', null]]]); ?>
+<?php partial('hero', ['heroTitle' => 'Chính sách bảo mật', 'crumbs' => [['Trang chủ', url('')], ['Chính sách bảo mật', null]]]); ?>
 <div class="container py-5" style="max-width:820px">
     <h4>1. Thông tin chúng tôi thu thập</h4>
     <p>Họ tên, email/số điện thoại, địa chỉ giao hàng và lịch sử đơn hàng, chỉ phục vụ việc xử lý đơn và chăm sóc khách hàng.</p>
