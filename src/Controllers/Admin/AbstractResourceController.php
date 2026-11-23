@@ -7,7 +7,6 @@ namespace App\Controllers\Admin;
 use App\Controllers\BaseController;
 use App\Core\ErrorHandler;
 use App\Core\FileUploader;
-use App\Core\Paginator;
 use App\Core\Request;
 use App\Core\Response;
 use App\Core\Validator;
@@ -17,16 +16,16 @@ use RuntimeException;
 
 /**
  * Config-driven CRUD (list + search + pagination + create/edit/delete + image upload)
- * for shared lookup resources: categories, brands, tags, banners.
+ * for the product classification lists: categories and brands.
  */
 abstract class AbstractResourceController extends BaseController
 {
-    private const PER_PAGE = 10;
+    private const MAX_ROWS = 500;
 
     /**
      * @return array{
      *   title: string, route: string, table: string, search: array<int, string>, upload_dir?: string,
-     *   slug_from?: string, columns: array<int, array<string, string>>, fields: array<int, array<string, mixed>>
+     *   slug_from?: string, product_fk?: string, block_delete_when_used?: bool, columns: array<int, array<string, string>>, fields: array<int, array<string, mixed>>
      * }
      */
     abstract protected function config(): array;
@@ -47,13 +46,18 @@ abstract class AbstractResourceController extends BaseController
     {
         $search = trim((string) $request->getQuery('q', ''));
         $repo = $this->repo();
-        $paginator = Paginator::fromRequest($request, $repo->countAll($search), self::PER_PAGE);
+        // Danh mục/thương hiệu ít bản ghi: hiển thị hết, cuộn trang, không phân trang.
+        $rows = $repo->paginate($search, self::MAX_ROWS, 0);
+        $usage = $this->usage();
+        foreach ($rows as &$row) {
+            $row['product_count'] = $usage[(int) $row['id']] ?? 0;
+        }
+        unset($row);
 
         return $this->render('admin.resource.index', [
             'title' => $this->config()['title'],
             'config' => $this->config(),
-            'rows' => $repo->paginate($search, $paginator->getLimit(), $paginator->getOffset()),
-            'paginator' => $paginator,
+            'rows' => $rows,
             'search' => $search,
         ], 'layouts.admin');
     }
@@ -90,6 +94,13 @@ abstract class AbstractResourceController extends BaseController
             return ErrorHandler::render(404, $request);
         }
 
+        $used = $this->usage()[(int) $id] ?? 0;
+        if ($used > 0 && !empty($this->config()['block_delete_when_used'])) {
+            $this->flash('danger', sprintf('Không thể xóa vì đang có %d sản phẩm thuộc mục này. Hãy chuyển các sản phẩm sang mục khác trước.', $used));
+
+            return $this->redirect($this->base());
+        }
+
         try {
             $repo->delete((int) $id);
         } catch (PDOException) {
@@ -109,13 +120,25 @@ abstract class AbstractResourceController extends BaseController
         return $this->redirect($this->base());
     }
 
+    /** @return array<int, int> id => number of products using it */
+    private function usage(): array
+    {
+        $fk = $this->config()['product_fk'] ?? null;
+        if ($fk === null) {
+            return [];
+        }
+        $rows = \App\Core\Database::connection()->query("SELECT {$fk} AS id, COUNT(*) AS c FROM products WHERE {$fk} IS NOT NULL GROUP BY {$fk}")->fetchAll();
+
+        return array_map('intval', array_column($rows, 'c', 'id'));
+    }
+
     private function form(?array $row): Response
     {
         return $this->render('admin.resource.form', [
             'title' => ($row ? 'Sửa ' : 'Thêm ') . mb_strtolower($this->config()['title']),
             'config' => $this->config(),
             'row' => $row,
-            'action' => $row ? $this->base() . '/' . $row['id'] : $this->base(),
+            'action' => $row ? $this->base() . '/' . (int) $row['id'] : $this->base(),
         ], 'layouts.admin');
     }
 
@@ -124,7 +147,7 @@ abstract class AbstractResourceController extends BaseController
         $config = $this->config();
         $repo = $this->repo();
         $input = $request->getAllInput();
-        $formUrl = $existing ? $this->base() . '/' . $existing['id'] . '/edit' : $this->base() . '/create';
+        $formUrl = $existing ? $this->base() . '/' . (int) $existing['id'] . '/edit' : $this->base() . '/create';
 
         $rules = [];
         foreach ($config['fields'] as $field) {
@@ -157,6 +180,12 @@ abstract class AbstractResourceController extends BaseController
                         }
                     } elseif (!$existing && !empty($field['required_on_create'])) {
                         $errors[$name] = 'Vui lòng chọn ảnh.';
+                    } elseif ($existing && isset($input[$name . '_remove'])) {
+                        if (!empty($field['required_on_create'])) {
+                            $errors[$name] = 'Mục này bắt buộc phải có ảnh.';
+                        } else {
+                            $data[$name] = null;
+                        }
                     }
                     break;
                 default:
@@ -177,7 +206,8 @@ abstract class AbstractResourceController extends BaseController
             return $this->redirectWithErrors($request, $formUrl, $errors);
         }
 
-        if (isset($config['slug_from'])) {
+        // Public URLs (slugs) are dev-managed: generated once on create, never changed by editing the name.
+        if (isset($config['slug_from']) && !($existing && !array_key_exists('slug', $data))) {
             $source = ($data['slug'] ?? null) ?: (string) $data[$config['slug_from']];
             $data['slug'] = $repo->slugFor($source, $existing ? (int) $existing['id'] : null);
         }
@@ -185,7 +215,8 @@ abstract class AbstractResourceController extends BaseController
         if ($existing) {
             $repo->update((int) $existing['id'], $data);
             foreach ($config['fields'] as $field) {
-                if ($field['type'] === 'image' && isset($data[$field['name']])) {
+                // Ảnh cũ bị thay bằng ảnh mới hoặc bị gỡ (null): xóa file cũ khỏi kho lưu trữ.
+                if ($field['type'] === 'image' && array_key_exists($field['name'], $data)) {
                     $uploader->delete($existing[$field['name']] ?? null);
                 }
             }
