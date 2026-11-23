@@ -14,7 +14,7 @@ final class AdminMiddleware implements MiddlewareInterface
     public function handle(Request $request): ?Response
     {
         if (!Auth::check()) {
-            return Response::redirect('/admin/login');
+            return Response::redirect(url('/admin/login'));
         }
         if (!Auth::isAdmin()) {
             return ErrorHandler::render(403, $request);

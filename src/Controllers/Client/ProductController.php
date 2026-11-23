@@ -29,11 +29,25 @@ final class ProductController extends BaseController
         if (!in_array($sort, ProductRepository::sortKeys(), true)) {
             $sort = 'newest';
         }
-        $maxPrice = (int) $request->getQuery('max_price', 0);
+
+        $minPrice = max(0, (int) $request->getQuery('min_price', 0));
+        $maxPrice = max(0, (int) $request->getQuery('max_price', 0));
+
+        if ($minPrice > $sliderMax) {
+            $minPrice = $sliderMax;
+        }
+        if ($maxPrice > $sliderMax) {
+            $maxPrice = 0;
+        }
+        if ($minPrice > 0 && $maxPrice > 0 && $minPrice > $maxPrice) {
+            [$minPrice, $maxPrice] = [$maxPrice, $minPrice];
+        }
+
         $filters = [
             'q' => trim((string) $request->getQuery('q', '')),
             'category' => trim((string) $request->getQuery('category', '')),
-            'max_price' => ($maxPrice > 0 && $maxPrice < $sliderMax) ? $maxPrice : 0,
+            'min_price' => $minPrice,
+            'max_price' => $maxPrice,
         ];
 
         $paginator = Paginator::fromRequest($request, $products->countFiltered($filters), self::PER_PAGE);
@@ -65,7 +79,6 @@ final class ProductController extends BaseController
             'title' => $product['name'],
             'product' => $product,
             'images' => $products->images((int) $product['id']),
-            'tags' => $products->tags((int) $product['id']),
             'related' => $products->related((int) $product['id'], (int) $product['category_id'], 4),
             'reviews' => $reviews->listVisible((int) $product['id'], $paginator->getLimit(), $paginator->getOffset()),
             'paginator' => $paginator,
