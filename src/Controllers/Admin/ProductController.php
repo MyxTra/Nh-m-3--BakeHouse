@@ -16,6 +16,7 @@ use App\Policies\ProductPolicy;
 use App\Repositories\CategoryRepository;
 use App\Repositories\ProductRepository;
 use App\Repositories\SimpleTableRepository;
+use App\Services\Chatbot\ProductEmbeddingIndexer;
 use RuntimeException;
 
 final class ProductController extends BaseController
@@ -30,38 +31,22 @@ final class ProductController extends BaseController
     {
         $search = trim((string) $request->getQuery('q', ''));
         $categoryId = (int) $request->getQuery('category', 0);
-        $status = (string) $request->getQuery('status', '');
-        $scope = (string) $request->getQuery('scope', 'mine');
-        $ownerId = $scope === 'all' ? 0 : (int) Auth::id();
-
-        $paginator = Paginator::fromRequest($request, $this->products->adminCount($search, $categoryId, $ownerId, $status), self::PER_PAGE);
-
-        return $this->render('admin.products.index', [
-            'title' => 'Nguyên vật liệu',
-            'rows' => $this->products->adminList($search, $categoryId, $ownerId, $status, $paginator->getLimit(), $paginator->getOffset()),
-            'paginator' => $paginator,
-            'categories' => (new CategoryRepository())->allForSelect(),
-            'search' => $search,
-            'categoryId' => $categoryId,
-            'status' => $status,
-            'scope' => $scope,
-            'adminId' => (int) Auth::id(),
-        ], 'layouts.admin');
-    }
-
-    public function show(Request $request, string $id): Response
-    {
-        $product = $this->products->findById((int) $id);
-        if ($product === null) {
-            return ErrorHandler::render(404, $request);
+        $view = (string) $request->getQuery('view', '');
+        if (!in_array($view, ['active', 'restock', 'hidden'], true)) {
+            $view = '';
         }
 
-        return $this->render('admin.products.show', [
-            'title' => $product['name'],
-            'product' => $product,
-            'images' => $this->products->images((int) $id),
-            'tags' => $this->products->tags((int) $id),
-            'canModify' => ProductPolicy::canModify(Auth::user(), $product),
+        $paginator = Paginator::fromRequest($request, $this->products->adminCount($search, $categoryId, $view), self::PER_PAGE);
+
+        return $this->render('admin.products.index', [
+            'title' => 'Sản phẩm',
+            'rows' => $this->products->adminList($search, $categoryId, $view, $paginator->getLimit(), $paginator->getOffset()),
+            'paginator' => $paginator,
+            'categories' => (new CategoryRepository())->allForSelect(),
+            'counts' => $this->products->viewCounts(),
+            'search' => $search,
+            'categoryId' => $categoryId,
+            'view' => $view,
         ], 'layouts.admin');
     }
 
@@ -76,7 +61,7 @@ final class ProductController extends BaseController
         if ($product === null) {
             return ErrorHandler::render(404, $request);
         }
-        if (!ProductPolicy::canModify(Auth::user(), $product)) {
+        if (!ProductPolicy::canModify(Auth::user())) {
             return ErrorHandler::render(403, $request);
         }
 
@@ -94,7 +79,7 @@ final class ProductController extends BaseController
         if ($product === null) {
             return ErrorHandler::render(404, $request);
         }
-        if (!ProductPolicy::canModify(Auth::user(), $product)) {
+        if (!ProductPolicy::canModify(Auth::user())) {
             return ErrorHandler::render(403, $request);
         }
 
@@ -107,7 +92,7 @@ final class ProductController extends BaseController
         if ($product === null) {
             return ErrorHandler::render(404, $request);
         }
-        if (!ProductPolicy::canModify(Auth::user(), $product)) {
+        if (!ProductPolicy::canModify(Auth::user())) {
             return ErrorHandler::render(403, $request);
         }
 
@@ -130,7 +115,7 @@ final class ProductController extends BaseController
         if ($product === null) {
             return ErrorHandler::render(404, $request);
         }
-        if (!ProductPolicy::canModify(Auth::user(), $product)) {
+        if (!ProductPolicy::canModify(Auth::user())) {
             return ErrorHandler::render(403, $request);
         }
 
@@ -155,20 +140,18 @@ final class ProductController extends BaseController
     private function form(?array $product): Response
     {
         return $this->render('admin.products.form', [
-            'title' => $product ? 'Sửa nguyên vật liệu' : 'Thêm nguyên vật liệu',
+            'title' => $product ? 'Sửa sản phẩm' : 'Thêm sản phẩm',
             'product' => $product,
             'images' => $product ? $this->products->images((int) $product['id']) : [],
-            'selectedTags' => $product ? $this->products->tagIds((int) $product['id']) : [],
             'categories' => (new CategoryRepository())->allForSelect(),
             'brands' => (new SimpleTableRepository('brands', []))->all(),
-            'tags' => (new SimpleTableRepository('tags', []))->all(),
         ], 'layouts.admin');
     }
 
     private function save(Request $request, ?array $existing): Response
     {
         $input = $request->getAllInput();
-        $formUrl = $existing ? '/admin/products/' . $existing['id'] . '/edit' : '/admin/products/create';
+        $formUrl = $existing ? '/admin/products/' . (int) $existing['id'] . '/edit' : '/admin/products/create';
 
         $validator = new Validator($input, [
             'name' => 'required|max:190',
@@ -179,10 +162,10 @@ final class ProductController extends BaseController
             'description' => 'max:5000',
         ]);
         $errors = $validator->validate() ? [] : $validator->errors();
-        if (!isset($errors['price']) && (int) $input['price'] < 0) {
+        if (!isset($errors['price']) && (int) ($input['price'] ?? 0) < 0) {
             $errors['price'] = 'Giá không được âm.';
         }
-        if (!isset($errors['stock_quantity']) && (int) $input['stock_quantity'] < 0) {
+        if (!isset($errors['stock_quantity']) && (int) ($input['stock_quantity'] ?? 0) < 0) {
             $errors['stock_quantity'] = 'Tồn kho không được âm.';
         }
 
@@ -229,11 +212,10 @@ final class ProductController extends BaseController
         if ($mainImage !== null) {
             $data['image_path'] = $mainImage;
         }
-        $tagIds = array_map('intval', (array) ($input['tag_ids'] ?? []));
 
         if ($existing) {
             $productId = (int) $existing['id'];
-            $this->products->update($productId, $data, $tagIds);
+            $this->products->update($productId, $data);
             if ($mainImage !== null) {
                 $uploader->delete($existing['image_path']);
             }
@@ -247,13 +229,19 @@ final class ProductController extends BaseController
             $this->flash('success', 'Đã cập nhật sản phẩm.');
         } else {
             $data['slug'] = $this->products->slugFor($data['name'], null);
-            $data['created_by'] = (int) Auth::id();
-            $productId = $this->products->create($data, $tagIds);
+            $productId = $this->products->create($data);
             $this->flash('success', 'Đã thêm sản phẩm mới.');
         }
 
         foreach ($gallery as $path) {
             $this->products->addImage($productId, $path);
+        }
+
+        // Keep chatbot search fresh; a failure here must never block the admin (lazy sync covers new products).
+        try {
+            (new ProductEmbeddingIndexer())->sync($productId);
+        } catch (\Throwable $e) {
+            ErrorHandler::logException($e);
         }
 
         return $this->redirect('/admin/products');
