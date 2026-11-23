@@ -1,14 +1,12 @@
 (function () {
   'use strict';
 
-
   function getBasePath() {
     var path = window.location.pathname || '/';
     var frontControllerMatch = path.match(/^(.*?\/public\/index\.php)(?:\/|$|\?)/i);
     if (frontControllerMatch) {
       return frontControllerMatch[1].replace(/\/+$/, '');
     }
-
 
     var cutMatch = path.match(/^(.*?)(?:\/(?:admin|products|cart|checkout|orders|notifications|login|register|account|api|public)(?:\/|$|\?))/i);
     var base = cutMatch ? cutMatch[1] : path;
@@ -21,9 +19,7 @@
     return base === '/' ? '' : base.replace(/\/+$/, '');
   }
 
-
   var BASE_PATH = getBasePath();
-
 
   function url(p) {
     if (!p) { return BASE_PATH || '/'; }
@@ -39,10 +35,8 @@
     return BASE_PATH + clean;
   }
 
-
   var csrfMeta = document.querySelector('meta[name="csrf-token"]');
   var csrfToken = csrfMeta ? csrfMeta.getAttribute('content') : '';
-
 
   // ---------- Toasts ----------
   function toast(message, type) {
@@ -60,11 +54,9 @@
   }
   window.BH = { toast: toast, csrf: csrfToken, url: url };
 
-
   document.querySelectorAll('[data-flash]').forEach(function (node) {
     toast(node.getAttribute('data-message'), node.getAttribute('data-flash'));
   });
-
 
   if (window.sessionStorage) {
     var authNotice = sessionStorage.getItem('bh_auth_notice');
@@ -73,7 +65,6 @@
       toast(authNotice, 'warning');
     }
   }
-
 
   // ---------- fetch helper ----------
   function post(endpoint, data) {
@@ -90,7 +81,6 @@
     });
   }
 
-
   function updateCartBadge(count) {
     document.querySelectorAll('.bh-cart-badge').forEach(function (b) {
       b.textContent = count;
@@ -98,9 +88,7 @@
     });
   }
 
-
   window.BH.updateCartBadge = updateCartBadge;
-
 
   // ---------- Add to cart ----------
   document.addEventListener('click', function (event) {
@@ -134,7 +122,6 @@
     }).catch(function () { btn.disabled = false; toast('Không thể kết nối máy chủ.', 'danger'); });
   });
 
-
   // ---------- Cart page ----------
   function applyCartResponse(res) {
     toast(res.message, res.ok ? 'success' : 'danger');
@@ -147,7 +134,6 @@
     });
     return true;
   }
-
 
   document.querySelectorAll('[data-cart-qty]').forEach(function (input) {
     var row = input.closest('[data-cart-row]');
@@ -174,7 +160,6 @@
     });
   });
 
-
   document.querySelectorAll('[data-cart-remove]').forEach(function (btn) {
     btn.addEventListener('click', function () {
       var row = btn.closest('[data-cart-row]');
@@ -185,7 +170,6 @@
       });
     });
   });
-
 
   // ---------- Quantity stepper (product detail) ----------
   document.querySelectorAll('.bh-qty').forEach(function (box) {
@@ -200,7 +184,6 @@
     });
   });
 
-
   // ---------- Product gallery ----------
   document.querySelectorAll('[data-gallery-thumb]').forEach(function (thumb) {
     thumb.addEventListener('click', function () {
@@ -210,7 +193,6 @@
       thumb.classList.add('is-active');
     });
   });
-
 
   // ---------- Notifications: mark all read when the bell dropdown opens ----------
   var notifBtn = document.getElementById('bhNotifBtn');
@@ -227,7 +209,6 @@
     });
   }
 
-
   // ---------- Toggle hidden items (e.g. "Hiển thị tất cả" on the homepage category grid) ----------
   document.querySelectorAll('[data-toggle-categories]').forEach(function (btn) {
     btn.addEventListener('click', function () {
@@ -240,7 +221,6 @@
     });
   });
 
-
   // ---------- Price range label ----------
   var range = document.getElementById('bhPriceRange');
   if (range) {
@@ -252,7 +232,6 @@
     }
   }
 
-
   // ---------- Show/hide password ----------
   document.querySelectorAll('input[type="password"]').forEach(function (input) {
     var wrap = document.createElement('div');
@@ -260,7 +239,6 @@
     input.parentNode.insertBefore(wrap, input);
     wrap.appendChild(input);
     input.classList.add('bh-password-field__input');
-
 
     var btn = document.createElement('button');
     btn.type = 'button';
@@ -276,12 +254,10 @@
     wrap.appendChild(btn);
   });
 
-
   // ---------- Auto-submit selects ----------
   document.querySelectorAll('[data-autosubmit]').forEach(function (el) {
     el.addEventListener('change', function () { if (el.form) { el.form.submit(); } });
   });
-
 
   // ---------- Confirm modal ----------
   var confirmModalEl = document.getElementById('bhConfirmModal');
@@ -309,7 +285,6 @@
     }
   }
 
-
   // ---------- Image preview (admin) ----------
   document.querySelectorAll('input[type=file][data-preview]').forEach(function (input) {
     var target = document.querySelector(input.getAttribute('data-preview'));
@@ -333,4 +308,3 @@
     });
   });
 })();
-

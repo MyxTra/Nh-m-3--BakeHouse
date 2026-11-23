@@ -17,6 +17,7 @@ $flashes = \App\Core\Session::pullFlash();
     <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css" rel="stylesheet">
     <link href="<?= e(asset('assets/css/tokens.css')) ?>" rel="stylesheet">
     <link href="<?= e(asset('assets/css/app.css')) ?>" rel="stylesheet">
+    <link href="<?= e(asset('assets/css/chatbot.css')) ?>" rel="stylesheet">
 </head>
 <body data-shipping-fee="<?= (int) \App\Core\Env::int('SHIPPING_FEE', 30000) ?>">
 <?php partial('header'); ?>
@@ -26,12 +27,13 @@ $flashes = \App\Core\Session::pullFlash();
 <?php partial('footer'); ?>
 <?php partial('chatbot'); ?>
 <?php partial('confirm-modal'); ?>
-<div class="toast-container position-fixed top-0 end-0 p-3" id="bhToasts" style="z-index:1100">
+<div class="toast-container position-fixed end-0 p-3 bh-toasts" id="bhToasts" style="z-index:1100">
     <?php foreach ($flashes as $flash) : ?>
-        <span data-flash="<?= e($flash['type']) ?>" data-message="<?= e($flash['message']) ?>"></span>
+        <span data-flash="<?= e((string) ($flash['type'] ?? 'info')) ?>" data-message="<?= e((string) ($flash['message'] ?? '')) ?>"></span>
     <?php endforeach; ?>
 </div>
 <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
 <script src="<?= e(asset('assets/js/app.js')) ?>"></script>
+<script src="<?= e(asset('assets/js/chatbot.js')) ?>"></script>
 </body>
 </html>
