@@ -1,11 +1,9 @@
 <?php
-partial('hero', ['heroTitle' => 'Câu hỏi thường gặp', 'crumbs' => [['Trang chủ', '/'], ['FAQ', null]]]);
+partial('hero', ['heroTitle' => 'Câu hỏi thường gặp', 'crumbs' => [['Trang chủ', url('')], ['FAQ', null]]]);
 $faqs = [
-    ['Tôi có thể thanh toán bằng cách nào?', 'BakeHouse hỗ trợ thanh toán khi nhận hàng (COD) và chuyển khoản qua mã VietQR. Với VietQR, mã QR đúng số tiền và nội dung chuyển khoản hiển thị ngay sau khi đặt hàng.'],
-    ['Phí vận chuyển là bao nhiêu?', 'Phí vận chuyển cố định cho mỗi đơn hàng và được hiển thị rõ ở bước thanh toán.'],
-    ['Làm sao theo dõi đơn hàng?', 'Vào mục "Đơn hàng của tôi" để xem trạng thái: Chờ xác nhận → Đang xử lý → Đang giao → Đã giao.'],
-    ['Khi nào tôi có thể đánh giá sản phẩm?', 'Bạn chỉ có thể đánh giá sau khi đã nhận hàng (đơn ở trạng thái Đã giao), mỗi sản phẩm một lần.'],
-    ['Tôi quên mật khẩu thì làm thế nào?', 'Chọn "Quên mật khẩu" ở trang đăng nhập và làm theo hướng dẫn trong liên kết được gửi.'],
+    ['BakeHouse giao hàng trong bao lâu?', 'Đơn nội thành thường được xử lý và giao trong ngày tùy khu vực và thời điểm đặt đơn.'],
+    ['Thanh toán VietQR xác nhận thế nào?', 'Sau khi đặt đơn VietQR, bạn quét mã đúng số tiền và nội dung mã đơn; cửa hàng sẽ xác nhận sau khi nhận được tiền.'],
+    ['Ai có thể đánh giá sản phẩm?', 'Chỉ khách hàng đã có đơn hàng giao thành công mới có thể đánh giá sản phẩm.'],
 ];
 ?>
 <div class="container py-5" style="max-width:820px">
