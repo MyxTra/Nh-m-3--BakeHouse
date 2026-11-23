@@ -29,11 +29,16 @@ final class View
         return self::capture($layout, array_merge($data, ['content' => $content]));
     }
 
-    private static function capture(string $view, array $data): string
+    /**
+     * The parameter is named with a double underscore (not $view) so it can never collide with a
+     * same-named 'view' key in $data: extract() uses EXTR_SKIP, which would silently keep this
+     * parameter's value instead of the caller's data, leaving templates reading the wrong variable.
+     */
+    private static function capture(string $__view, array $data): string
     {
-        $file = BASE_PATH . '/src/Views/' . str_replace('.', '/', $view) . '.php';
+        $file = BASE_PATH . '/src/Views/' . str_replace('.', '/', $__view) . '.php';
         if (!is_file($file)) {
-            throw new RuntimeException("View not found: {$view}");
+            throw new RuntimeException("View not found: {$__view}");
         }
 
         extract(array_merge(self::$shared, $data), EXTR_SKIP);

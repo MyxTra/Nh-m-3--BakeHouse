@@ -26,16 +26,26 @@ final class Request
             }
         }
 
-        // Lấy URI từ REQUEST_URI
-        $uri = parse_url($_SERVER['REQUEST_URI'] ?? '/', PHP_URL_PATH) ?: '/';
+        $path = parse_url($_SERVER['REQUEST_URI'] ?? '/', PHP_URL_PATH) ?: '/';
+        $path = '/' . trim(rawurldecode($path), '/');
 
-        // Tự động cắt bỏ phần thư mục chứa dự án (ví dụ: /Back-House/public)
-        $scriptName = dirname($_SERVER['SCRIPT_NAME']); 
-        if ($scriptName !== '/' && str_starts_with($uri, $scriptName)) {
-            $uri = substr($uri, strlen($scriptName));
+        $scriptName = '/' . trim(str_replace('\\', '/', (string) ($_SERVER['SCRIPT_NAME'] ?? '')), '/');
+        $baseDir = rtrim(str_replace('\\', '/', dirname($scriptName)), '/');
+
+        foreach (array_filter([$scriptName, $baseDir], static fn (string $p): bool => $p !== '' && $p !== '/' && $p !== '.') as $prefix) {
+            $normalized = '/' . trim($prefix, '/');
+            if ($path === $normalized) {
+                $path = '/';
+                break;
+            }
+            if (str_starts_with($path, $normalized . '/')) {
+                $path = substr($path, strlen($normalized));
+                break;
+            }
         }
 
-        $path = '/' . trim(rawurldecode($uri), '/');
+        $path = preg_replace('#^/(?:public/)?index\.php(?=/|$)#i', '', $path) ?: '/';
+        $path = '/' . ltrim($path, '/');
 
         return new self($method, $path, $_GET, $_POST, $_FILES, $_SERVER);
     }

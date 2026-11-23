@@ -18,7 +18,7 @@ final class Database
                 'mysql:host=%s;port=%d;dbname=%s;charset=utf8mb4',
                 Env::get('DB_HOST', 'localhost'),
                 Env::int('DB_PORT', 3306),
-                Env::get('DB_DATABASE', 'bakehouse')
+                Env::get('DB_DATABASE', 'webbakehouse')
             );
 
             self::$connection = new PDO(

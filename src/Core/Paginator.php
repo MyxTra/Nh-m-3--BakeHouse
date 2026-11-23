@@ -71,15 +71,23 @@ final class Paginator
         $params = $this->query;
         $params['page'] = $page;
 
-        $basePath = $this->path;
-        if (str_starts_with($basePath, '/') && !str_starts_with($basePath, '//')) {
-            $scriptDir = rtrim(str_replace('\\', '/', dirname($_SERVER['SCRIPT_NAME'] ?? '')), '/');
-            if ($scriptDir !== '' && $scriptDir !== '/' && !str_starts_with($basePath, $scriptDir . '/') && $basePath !== $scriptDir) {
-                $basePath = $scriptDir . $basePath;
+        $scriptName = '/' . ltrim(str_replace('\\', '/', (string) ($_SERVER['SCRIPT_NAME'] ?? '')), '/');
+        $prefix = '';
+        if ($scriptName !== '/' && preg_match('#^(.*?/public/index\.php)$#i', $scriptName, $m)) {
+            $prefix = $m[1];
+        } else {
+            $baseDir = rtrim(str_replace('\\', '/', dirname($scriptName)), '/');
+            if ($baseDir !== '' && $baseDir !== '/' && $baseDir !== '.') {
+                $prefix = '/' . trim($baseDir, '/');
             }
         }
 
-        return $basePath . '?' . http_build_query($params);
+        $cleanPath = '/' . ltrim($this->path, '/');
+        if ($prefix !== '' && str_starts_with($cleanPath, $prefix . '/')) {
+            $cleanPath = substr($cleanPath, strlen($prefix));
+        }
+
+        return $prefix . $cleanPath . '?' . http_build_query($params);
     }
 
     /** Render Bootstrap 5 pagination, preserving all query-string filters. */
