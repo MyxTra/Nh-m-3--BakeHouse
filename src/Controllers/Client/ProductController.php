@@ -43,11 +43,29 @@ final class ProductController extends BaseController
             [$minPrice, $maxPrice] = [$maxPrice, $minPrice];
         }
 
+        $rawBrand = $request->getQuery('brand', []);
+        $brandSlugs = [];
+        if (is_array($rawBrand)) {
+            foreach ($rawBrand as $item) {
+                $slug = trim((string) $item);
+                if ($slug !== '') {
+                    $brandSlugs[] = $slug;
+                }
+            }
+        } elseif (is_string($rawBrand) && trim($rawBrand) !== '') {
+            $brandSlugs[] = trim($rawBrand);
+        }
+        $brandSlugs = array_values(array_unique($brandSlugs));
+
+        $inStock = (string) $request->getQuery('in_stock', '') === '1';
+
         $filters = [
             'q' => trim((string) $request->getQuery('q', '')),
             'category' => trim((string) $request->getQuery('category', '')),
+            'brands' => $brandSlugs,
             'min_price' => $minPrice,
             'max_price' => $maxPrice,
+            'in_stock' => $inStock,
         ];
 
         $paginator = Paginator::fromRequest($request, $products->countFiltered($filters), self::PER_PAGE);
@@ -56,6 +74,7 @@ final class ProductController extends BaseController
             'title' => 'Sản phẩm',
             'products' => $products->search($filters, $sort, $paginator->getLimit(), $paginator->getOffset()),
             'categories' => (new CategoryRepository())->activeWithCounts(),
+            'brands' => $products->brandsWithCounts(),
             'paginator' => $paginator,
             'filters' => $filters,
             'sort' => $sort,

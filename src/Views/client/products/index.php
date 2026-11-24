@@ -1,37 +1,89 @@
 <?php
-/** @var array $products */ /** @var array $categories */ /** @var \App\Core\Paginator $paginator */
-/** @var array $filters */ /** @var string $sort */ /** @var int $sliderMax */
+/** @var array $products */ /** @var array $categories */ /** @var array $brands */
+/** @var \App\Core\Paginator $paginator */ /** @var array $filters */ /** @var string $sort */ /** @var int $sliderMax */
 $sortOptions = ['newest' => 'Mới nhất', 'price_asc' => 'Giá tăng dần', 'price_desc' => 'Giá giảm dần', 'best_selling' => 'Bán chạy', 'top_rated' => 'Đánh giá cao'];
 $currentMin = max(0, (int) ($filters['min_price'] ?? 0));
 $currentMax = (int) ($filters['max_price'] ?? 0) > 0 ? (int) $filters['max_price'] : $sliderMax;
+$selectedBrands = (array) ($filters['brands'] ?? []);
+$inStockOnly = !empty($filters['in_stock']);
 $productsUrl = url('products');
-$hasActiveFilter = $filters['q'] !== '' || $filters['category'] !== '' || $currentMin > 0 || ((int) ($filters['max_price'] ?? 0)) > 0;
+$clearSearchUrl = query_url([], ['q', 'page']);
+$clearSideFilterUrl = query_url([], ['category', 'brand', 'min_price', 'max_price', 'in_stock', 'page']);
+
+$hasSideFilter = $filters['category'] !== ''
+    || $selectedBrands !== []
+    || $currentMin > 0
+    || ((int) ($filters['max_price'] ?? 0)) > 0
+    || $inStockOnly;
+
+$categoryMap = [];
+foreach ($categories as $cat) {
+    $categoryMap[(string) $cat['slug']] = (string) $cat['name'];
+}
+$brandMap = [];
+foreach ($brands as $br) {
+    $brandMap[(string) $br['slug']] = (string) $br['name'];
+}
+
+$activeChips = [];
+if ($filters['q'] !== '') {
+    $activeChips[] = ['label' => 'Từ khóa: ' . $filters['q'], 'url' => query_url([], ['q', 'page'])];
+}
+if ($filters['category'] !== '') {
+    $catName = $categoryMap[$filters['category']] ?? $filters['category'];
+    $activeChips[] = ['label' => 'Danh mục: ' . $catName, 'url' => query_url([], ['category', 'page'])];
+}
+foreach ($selectedBrands as $brandSlug) {
+    $brandSlugStr = (string) $brandSlug;
+    $remainingBrands = array_values(array_filter($selectedBrands, static fn (mixed $s): bool => (string) $s !== $brandSlugStr));
+    $brandName = $brandMap[$brandSlugStr] ?? $brandSlugStr;
+    $activeChips[] = [
+        'label' => 'Thương hiệu: ' . $brandName,
+        'url' => $remainingBrands === []
+            ? query_url([], ['brand', 'page'])
+            : query_url(['brand' => $remainingBrands], ['page']),
+    ];
+}
+if ($currentMin > 0 || ((int) ($filters['max_price'] ?? 0)) > 0) {
+    $activeChips[] = [
+        'label' => 'Giá: ' . format_vnd($currentMin) . ' – ' . format_vnd($currentMax),
+        'url' => query_url([], ['min_price', 'max_price', 'page']),
+    ];
+}
+if ($inStockOnly) {
+    $activeChips[] = ['label' => 'Chỉ hiện còn hàng', 'url' => query_url([], ['in_stock', 'page'])];
+}
+
 partial('hero', ['heroTitle' => 'Sản Phẩm', 'crumbs' => [['Trang chủ', url('')], ['Sản phẩm', null]]]);
 ?>
 <div class="container py-5">
     <div class="d-flex flex-wrap align-items-center justify-content-center gap-2 mb-3">
         <form action="<?= e($productsUrl) ?>" method="get" class="bh-product-search m-0">
             <?php if ($filters['category'] !== '') : ?><input type="hidden" name="category" value="<?= e($filters['category']) ?>"><?php endif; ?>
+            <?php foreach ($selectedBrands as $brandSlug) : ?><input type="hidden" name="brand[]" value="<?= e((string) $brandSlug) ?>"><?php endforeach; ?>
             <input type="hidden" name="sort" value="<?= e($sort) ?>">
             <?php if ($currentMin > 0) : ?><input type="hidden" name="min_price" value="<?= $currentMin ?>"><?php endif; ?>
             <?php if ((int) ($filters['max_price'] ?? 0) > 0) : ?><input type="hidden" name="max_price" value="<?= (int) $filters['max_price'] ?>"><?php endif; ?>
+            <?php if ($inStockOnly) : ?><input type="hidden" name="in_stock" value="1"><?php endif; ?>
             <div class="input-group">
                 <input class="form-control" type="search" name="q" placeholder="Tên hoặc thương hiệu" value="<?= e($filters['q']) ?>">
                 <button class="bh-btn bh-btn--dark" type="submit" aria-label="Tìm"><i class="bi bi-search"></i></button>
             </div>
         </form>
-        <?php if ($hasActiveFilter) : ?>
-            <a class="bh-btn bh-btn--outline text-nowrap" href="<?= e($productsUrl) ?>"><i class="bi bi-x-lg"></i> Xóa lọc</a>
+        <?php if ($filters['q'] !== '') : ?>
+            <a class="bh-btn bh-btn--outline text-nowrap" href="<?= e($clearSearchUrl) ?>"><i class="bi bi-x-lg"></i> Xóa tìm</a>
         <?php endif; ?>
     </div>
-    <div class="bh-toolbar mb-4">
+
+    <div class="bh-toolbar <?= $activeChips === [] ? 'mb-4' : 'mb-3' ?>">
         <span class="bh-muted">Hiển thị <?= $paginator->getFirstItem() ?>–<?= $paginator->getLastItem() ?> của <?= $paginator->getTotalItems() ?> kết quả</span>
         <form method="get" action="<?= e($productsUrl) ?>" class="d-flex align-items-center gap-2">
-            <?php foreach (['q' => $filters['q'], 'category' => $filters['category']] as $key => $value) : ?>
-                <?php if ($value !== '') : ?><input type="hidden" name="<?= e($key) ?>" value="<?= e($value) ?>"><?php endif; ?>
-            <?php endforeach; ?>
+            <?php if ($filters['q'] !== '') : ?><input type="hidden" name="q" value="<?= e($filters['q']) ?>"><?php endif; ?>
+            <?php if ($filters['category'] !== '') : ?><input type="hidden" name="category" value="<?= e($filters['category']) ?>"><?php endif; ?>
+            <?php foreach ($selectedBrands as $brandSlug) : ?><input type="hidden" name="brand[]" value="<?= e((string) $brandSlug) ?>"><?php endforeach; ?>
             <?php if ($currentMin > 0) : ?><input type="hidden" name="min_price" value="<?= $currentMin ?>"><?php endif; ?>
             <?php if ((int) ($filters['max_price'] ?? 0) > 0) : ?><input type="hidden" name="max_price" value="<?= (int) $filters['max_price'] ?>"><?php endif; ?>
+            <?php if ($inStockOnly) : ?><input type="hidden" name="in_stock" value="1"><?php endif; ?>
             <label class="bh-muted" for="bhSort">Sắp xếp theo:</label>
             <select class="form-select" id="bhSort" name="sort" data-autosubmit>
                 <?php foreach ($sortOptions as $value => $label) : ?>
@@ -40,9 +92,26 @@ partial('hero', ['heroTitle' => 'Sản Phẩm', 'crumbs' => [['Trang chủ', url
             </select>
         </form>
     </div>
+
+    <?php if ($activeChips !== []) : ?>
+        <div class="d-flex flex-wrap align-items-center gap-2 mb-4">
+            <span class="small bh-muted">Đang lọc:</span>
+            <?php foreach ($activeChips as $chip) : ?>
+                <a class="badge rounded-pill text-bg-light border text-dark text-decoration-none d-inline-flex align-items-center gap-1 px-3 py-2 fw-normal" href="<?= e($chip['url']) ?>">
+                    <span><?= e($chip['label']) ?></span>
+                    <i class="bi bi-x"></i>
+                </a>
+            <?php endforeach; ?>
+            <?php if (count($activeChips) > 1) : ?>
+                <a class="small text-decoration-none ms-1" href="<?= e($productsUrl) ?>">Xóa tất cả</a>
+            <?php endif; ?>
+        </div>
+    <?php endif; ?>
+
     <div class="d-flex gap-2 mb-4 d-lg-none">
         <button class="bh-btn bh-btn--outline flex-grow-1" type="button" data-bs-toggle="offcanvas" data-bs-target="#bhFilters"><i class="bi bi-funnel"></i> Bộ lọc</button>
     </div>
+
     <div class="row g-4">
         <aside class="col-lg-3">
             <div class="offcanvas-lg offcanvas-start" tabindex="-1" id="bhFilters">
@@ -56,11 +125,30 @@ partial('hero', ['heroTitle' => 'Sản Phẩm', 'crumbs' => [['Trang chủ', url
                         <?php endforeach; ?>
                     </ul>
 
-                    <h3 class="bh-sidebar__title">Lọc theo giá</h3>
-                    <form action="<?= e($productsUrl) ?>" method="get" id="bhPriceFilterForm">
-                        <?php foreach (['q' => $filters['q'], 'category' => $filters['category'], 'sort' => $sort] as $key => $value) : ?>
-                            <?php if ($value !== '') : ?><input type="hidden" name="<?= e($key) ?>" value="<?= e($value) ?>"><?php endif; ?>
-                        <?php endforeach; ?>
+                    <form action="<?= e($productsUrl) ?>" method="get" id="bhSideFilterForm">
+                        <?php if ($filters['q'] !== '') : ?><input type="hidden" name="q" value="<?= e($filters['q']) ?>"><?php endif; ?>
+                        <?php if ($filters['category'] !== '') : ?><input type="hidden" name="category" value="<?= e($filters['category']) ?>"><?php endif; ?>
+                        <input type="hidden" name="sort" value="<?= e($sort) ?>">
+
+                        <?php if (!empty($brands)) : ?>
+                            <h3 class="bh-sidebar__title">Thương hiệu</h3>
+                            <div class="pe-1 mb-3" style="max-height: 210px; overflow-y: auto;">
+                                <?php foreach ($brands as $brand) :
+                                    $bSlug = (string) $brand['slug'];
+                                    $bId = 'bhBrand_' . $bSlug;
+                                    $checked = in_array($bSlug, $selectedBrands, true); ?>
+                                    <div class="form-check mb-2">
+                                        <input class="form-check-input" type="checkbox" name="brand[]" id="<?= e($bId) ?>" value="<?= e($bSlug) ?>"<?= $checked ? ' checked' : '' ?>>
+                                        <label class="form-check-label small d-flex justify-content-between align-items-center gap-2<?= $checked ? ' fw-semibold' : '' ?>" for="<?= e($bId) ?>">
+                                            <span><?= e($brand['name']) ?></span>
+                                            <span class="bh-muted">(<?= (int) $brand['product_count'] ?>)</span>
+                                        </label>
+                                    </div>
+                                <?php endforeach; ?>
+                            </div>
+                        <?php endif; ?>
+
+                        <h3 class="bh-sidebar__title">Lọc theo giá</h3>
                         <div class="row g-2 mb-3">
                             <div class="col-6">
                                 <label class="form-label small bh-muted mb-1" for="bhMinPriceInput">Từ (₫)</label>
@@ -76,7 +164,16 @@ partial('hero', ['heroTitle' => 'Sản Phẩm', 'crumbs' => [['Trang chủ', url
                             <span>Từ: <strong id="bhMinPriceOutput"><?= e(format_vnd($currentMin)) ?></strong></span>
                             <span>Đến: <strong id="bhPriceOutput"><?= e(format_vnd($currentMax)) ?></strong></span>
                         </div>
+
+                        <div class="form-check mt-3">
+                            <input class="form-check-input" type="checkbox" id="bhInStockCheck" name="in_stock" value="1"<?= $inStockOnly ? ' checked' : '' ?>>
+                            <label class="form-check-label small" for="bhInStockCheck">Chỉ hiện sản phẩm còn hàng</label>
+                        </div>
+
                         <button class="bh-btn bh-btn--primary w-100 mt-3" type="submit">Áp dụng</button>
+                        <?php if ($hasSideFilter) : ?>
+                            <a class="bh-btn bh-btn--outline w-100 mt-2" href="<?= e($clearSideFilterUrl) ?>"><i class="bi bi-x-lg"></i> Xóa bộ lọc</a>
+                        <?php endif; ?>
                     </form>
                 </div>
             </div>

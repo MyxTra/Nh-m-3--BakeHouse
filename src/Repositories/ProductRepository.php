@@ -33,6 +33,18 @@ final class ProductRepository extends BaseRepository
         return array_keys(self::SORTS);
     }
 
+    /** @return array<int, array<string, mixed>> */
+    public function brandsWithCounts(): array
+    {
+        return $this->fetchAll(
+            'SELECT b.id, b.name, b.slug, COUNT(p.id) AS product_count
+             FROM brands b
+             LEFT JOIN products p ON p.brand_id = b.id AND p.is_active = 1
+             GROUP BY b.id, b.name, b.slug
+             ORDER BY b.name ASC'
+        );
+    }
+
     /** Add display flags (is_new / is_best) used by the product card. */
     private function decorate(array $rows): array
     {
@@ -46,7 +58,7 @@ final class ProductRepository extends BaseRepository
     }
 
     /**
-     * @param array{q?: string, category?: string, max_price?: int, min_price?: int} $filters
+     * @param array{q?: string, category?: string, brands?: array<int, string>, max_price?: int, min_price?: int, in_stock?: bool} $filters
      * @return array{0: string, 1: array<string, mixed>}
      */
     private function publicWhere(array $filters): array
@@ -61,6 +73,16 @@ final class ProductRepository extends BaseRepository
             $clauses[] = 'c.slug = :category';
             $params['category'] = $filters['category'];
         }
+        $brands = array_values(array_filter((array) ($filters['brands'] ?? []), static fn (mixed $v): bool => is_string($v) && $v !== ''));
+        if ($brands !== []) {
+            $brandPlaceholders = [];
+            foreach ($brands as $i => $brandSlug) {
+                $key = "brand_{$i}";
+                $brandPlaceholders[] = ":{$key}";
+                $params[$key] = $brandSlug;
+            }
+            $clauses[] = 'b.slug IN (' . implode(', ', $brandPlaceholders) . ')';
+        }
         if (($filters['min_price'] ?? 0) > 0) {
             $clauses[] = 'p.price >= :min_price';
             $params['min_price'] = (int) $filters['min_price'];
@@ -68,6 +90,9 @@ final class ProductRepository extends BaseRepository
         if (($filters['max_price'] ?? 0) > 0) {
             $clauses[] = 'p.price <= :max_price';
             $params['max_price'] = (int) $filters['max_price'];
+        }
+        if (!empty($filters['in_stock'])) {
+            $clauses[] = 'p.stock_quantity > 0';
         }
 
         return ['WHERE ' . implode(' AND ', $clauses), $params];
