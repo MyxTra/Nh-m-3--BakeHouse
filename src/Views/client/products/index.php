@@ -64,14 +64,14 @@ partial('hero', ['heroTitle' => 'Sản Phẩm', 'crumbs' => [['Trang chủ', url
                         <div class="row g-2 mb-3">
                             <div class="col-6">
                                 <label class="form-label small bh-muted mb-1" for="bhMinPriceInput">Từ (₫)</label>
-                                <input class="form-control form-control-sm" id="bhMinPriceInput" type="number" name="min_price" min="0" max="<?= $sliderMax ?>" step="10000" value="<?= $currentMin ?>" placeholder="0">
+                                <input class="form-control form-control-sm" id="bhMinPriceInput" type="number" name="min_price" min="0" step="1" value="<?= $currentMin ?>" placeholder="0">
                             </div>
                             <div class="col-6">
                                 <label class="form-label small bh-muted mb-1" for="bhMaxPriceInput">Đến (₫)</label>
-                                <input class="form-control form-control-sm" id="bhMaxPriceInput" type="number" name="max_price" min="0" max="<?= $sliderMax ?>" step="10000" value="<?= $currentMax ?>" placeholder="<?= $sliderMax ?>">
+                                <input class="form-control form-control-sm" id="bhMaxPriceInput" type="number" name="max_price" min="0" step="1" value="<?= $currentMax ?>" placeholder="<?= $sliderMax ?>">
                             </div>
                         </div>
-                        <input class="bh-range" id="bhPriceRange" type="range" min="0" max="<?= $sliderMax ?>" step="10000" value="<?= $currentMax ?>">
+                        <input class="bh-range" id="bhPriceRange" type="range" min="0" max="<?= $sliderMax ?>" step="10000" value="<?= min($currentMax, $sliderMax) ?>">
                         <div class="d-flex justify-content-between small bh-muted mt-1">
                             <span>Từ: <strong id="bhMinPriceOutput"><?= e(format_vnd($currentMin)) ?></strong></span>
                             <span>Đến: <strong id="bhPriceOutput"><?= e(format_vnd($currentMax)) ?></strong></span>
@@ -116,7 +116,9 @@ document.addEventListener('DOMContentLoaded', function () {
             syncLabels();
         });
         maxInput.addEventListener('input', function () {
-            range.value = maxInput.value;
+            const num = Number(maxInput.value) || 0;
+            const sliderMaxVal = Number(range.max) || num;
+            range.value = String(Math.min(Math.max(0, num), sliderMaxVal));
             syncLabels();
         });
     }
