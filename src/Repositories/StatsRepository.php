@@ -4,124 +4,167 @@ declare(strict_types=1);
 
 namespace App\Repositories;
 
-/** Dashboard statistics scoped to one vendor (admin). */
+/** Sales statistics for the admin dashboard and the sales report. */
 final class StatsRepository extends BaseRepository
 {
-    /** @return array<string, int> */
-    public function summary(int $vendorId): array
+    /** All-time summary for the dashboard KPI cards. @return array{revenue: int, orders: int, delivered_orders: int, items_sold: int, average: int} */
+    public function summary(): array
     {
-        $totalOrders = (int) $this->fetchValue(
-            'SELECT COUNT(DISTINCT order_id) FROM order_items WHERE vendor_id = ?',
-            [$vendorId]
-        );
-        $completed = (int) $this->fetchValue(
-            'SELECT COUNT(DISTINCT o.id) FROM orders o JOIN order_items oi ON oi.order_id = o.id
-             WHERE oi.vendor_id = ? AND o.status = \'delivered\'',
-            [$vendorId]
-        );
+        $orders = $this->fetchOne(
+            "SELECT COUNT(*) AS total, COALESCE(SUM(status = 'delivered'), 0) AS delivered FROM orders"
+        ) ?? ['total' => 0, 'delivered' => 0];
         $sold = $this->fetchOne(
-            'SELECT COALESCE(SUM(quantity), 0) AS qty, COALESCE(SUM(unit_price * quantity), 0) AS revenue,
-                    COUNT(DISTINCT order_id) AS orders
-             FROM order_items WHERE vendor_id = ? AND status = \'delivered\'',
-            [$vendorId]
-        ) ?? ['qty' => 0, 'revenue' => 0, 'orders' => 0];
+            "SELECT COALESCE(SUM(quantity), 0) AS qty, COALESCE(SUM(unit_price * quantity), 0) AS revenue
+             FROM order_items WHERE status = 'delivered'"
+        ) ?? ['qty' => 0, 'revenue' => 0];
 
         $revenue = (int) $sold['revenue'];
-        $deliveredOrders = (int) $sold['orders'];
+        $delivered = (int) $orders['delivered'];
 
         return [
-            'total_orders' => $totalOrders,
-            'completed_orders' => $completed,
-            'in_progress_orders' => $totalOrders - $completed,
-            'items_sold' => (int) $sold['qty'],
             'revenue' => $revenue,
-            'average_revenue' => $deliveredOrders > 0 ? intdiv($revenue, $deliveredOrders) : 0,
+            'orders' => (int) $orders['total'],
+            'delivered_orders' => $delivered,
+            'items_sold' => (int) $sold['qty'],
+            'average' => $delivered > 0 ? intdiv($revenue, $delivered) : 0,
         ];
     }
 
-    /** @return array<int, array<string, mixed>> */
-    public function recentOrders(int $vendorId, int $limit): array
+    /** Count products with stock_quantity at or below $threshold. */
+    public function lowStockCount(int $threshold = 10): int
     {
-        return $this->fetchAll(
-            'SELECT o.id, o.order_code, o.recipient_name, o.status, o.created_at,
-                    (SELECT COALESCE(SUM(oi.unit_price * oi.quantity), 0) FROM order_items oi
-                     WHERE oi.order_id = o.id AND oi.vendor_id = :v2) AS vendor_amount
-             FROM orders o
-             WHERE EXISTS (SELECT 1 FROM order_items oi WHERE oi.order_id = o.id AND oi.vendor_id = :v)
-             ORDER BY o.id DESC LIMIT :limit',
-            ['v' => $vendorId, 'v2' => $vendorId, 'limit' => $limit]
+        return (int) $this->fetchValue(
+            'SELECT COUNT(*) FROM products WHERE stock_quantity <= :threshold',
+            ['threshold' => $threshold]
         );
     }
 
-    /** @return array<int, array<string, mixed>> */
-    public function recentActivity(int $vendorId, int $limit): array
+    /** All-time best sellers for the dashboard. @return array<int, array{product_name: string, qty: int, revenue: int}> */
+    public function topSelling(int $limit): array
     {
         return $this->fetchAll(
-            'SELECT h.created_at, h.to_status, o.order_code
+            "SELECT product_name, SUM(quantity) AS qty, SUM(unit_price * quantity) AS revenue
+             FROM order_items WHERE status = 'delivered'
+             GROUP BY product_id, product_name ORDER BY qty DESC, revenue DESC LIMIT :limit",
+            ['limit' => $limit]
+        );
+    }
+
+    /** @return array{0: string, 1: array<string, mixed>} WHERE fragment on delivered orders o + params */
+    private function reportWhere(string $search, ?string $from, ?string $to): array
+    {
+        $clauses = ["o.status = 'delivered'"];
+        $params = [];
+        if ($search !== '') {
+            $clauses[] = '(o.order_code LIKE :q OR o.recipient_name LIKE :q2 OR o.shipping_phone LIKE :q3)';
+            $params['q'] = $params['q2'] = $params['q3'] = $this->likeTerm($search);
+        }
+        if ($from !== null) {
+            $clauses[] = 'o.created_at >= :from';
+            $params['from'] = $from;
+        }
+        if ($to !== null) {
+            $clauses[] = 'o.created_at < DATE_ADD(:to, INTERVAL 1 DAY)';
+            $params['to'] = $to;
+        }
+
+        return [implode(' AND ', $clauses), $params];
+    }
+
+    /** KPI cards for the sales report over delivered orders only, honoring search + date filters. @return array{revenue: int, orders: int, delivered_orders: int} */
+    public function reportSummary(string $search, ?string $from, ?string $to): array
+    {
+        [$where, $params] = $this->reportWhere($search, $from, $to);
+        $deliveredCount = (int) $this->fetchValue(
+            "SELECT COUNT(*) FROM orders o WHERE {$where}",
+            $params
+        );
+        $revenue = (int) $this->fetchValue(
+            "SELECT COALESCE(SUM(oi.unit_price * oi.quantity), 0) FROM order_items oi JOIN orders o ON o.id = oi.order_id
+             WHERE oi.status = 'delivered' AND {$where}",
+            $params
+        );
+
+        return [
+            'revenue' => $revenue,
+            'orders' => $deliveredCount,
+            'delivered_orders' => $deliveredCount,
+        ];
+    }
+
+    /** Revenue per month for the last $months months (including the current one), zero filled. @return array<string, int> */
+    public function monthlySeries(int $months): array
+    {
+        $from = date('Y-m-01', strtotime('-' . ($months - 1) . ' months'));
+        $rows = $this->fetchAll(
+            "SELECT DATE_FORMAT(o.created_at, '%Y-%m') AS bucket, SUM(oi.unit_price * oi.quantity) AS revenue
+             FROM order_items oi JOIN orders o ON o.id = oi.order_id
+             WHERE oi.status = 'delivered' AND o.created_at >= :from
+             GROUP BY bucket",
+            ['from' => $from]
+        );
+        $map = array_column($rows, 'revenue', 'bucket');
+
+        $series = [];
+        for ($t = strtotime($from); $t <= time(); $t = strtotime('+1 month', $t)) {
+            $key = date('Y-m', $t);
+            $series[$key] = (int) ($map[$key] ?? 0);
+        }
+
+        return $series;
+    }
+
+    /** Revenue per day for the last $days days (including today), zero filled. @return array<string, int> */
+    public function dailySeries(int $days): array
+    {
+        $from = date('Y-m-d', strtotime('-' . ($days - 1) . ' days'));
+        $rows = $this->fetchAll(
+            "SELECT DATE(o.created_at) AS bucket, SUM(oi.unit_price * oi.quantity) AS revenue
+             FROM order_items oi JOIN orders o ON o.id = oi.order_id
+             WHERE oi.status = 'delivered' AND o.created_at >= :from
+             GROUP BY bucket",
+            ['from' => $from]
+        );
+        $map = array_column($rows, 'revenue', 'bucket');
+
+        $series = [];
+        for ($t = strtotime($from); $t <= strtotime('today'); $t += 86400) {
+            $key = date('Y-m-d', $t);
+            $series[$key] = (int) ($map[$key] ?? 0);
+        }
+
+        return $series;
+    }
+
+    /** Products with the most reviews (regardless of rating). @return array<int, array{name: string, rating_avg: float, rating_count: int}> */
+    public function mostReviewed(int $limit): array
+    {
+        return $this->fetchAll(
+            'SELECT name, rating_avg, rating_count FROM products
+             WHERE rating_count > 0
+             ORDER BY rating_count DESC, rating_avg DESC LIMIT :limit',
+            ['limit' => $limit]
+        );
+    }
+
+    /** Most recent order status changes, across all orders. @return array<int, array{order_code: string, to_status: string, created_at: string}> */
+    public function recentActivity(int $limit): array
+    {
+        return $this->fetchAll(
+            'SELECT o.order_code, h.to_status, h.created_at
              FROM order_status_histories h JOIN orders o ON o.id = h.order_id
-             WHERE EXISTS (SELECT 1 FROM order_items oi WHERE oi.order_id = o.id AND oi.vendor_id = :v)
              ORDER BY h.id DESC LIMIT :limit',
-            ['v' => $vendorId, 'limit' => $limit]
-        );
-    }
-
-    /** @return array<string, int> month (Y-m) => revenue, last 12 months, zero filled */
-    public function revenueByMonth(int $vendorId): array
-    {
-        $rows = $this->fetchAll(
-            'SELECT DATE_FORMAT(o.created_at, \'%Y-%m\') AS bucket, SUM(oi.unit_price * oi.quantity) AS revenue
-             FROM order_items oi JOIN orders o ON o.id = oi.order_id
-             WHERE oi.vendor_id = ? AND oi.status = \'delivered\' AND o.created_at >= DATE_SUB(CURDATE(), INTERVAL 12 MONTH)
-             GROUP BY bucket',
-            [$vendorId]
-        );
-        $map = array_column($rows, 'revenue', 'bucket');
-        $series = [];
-        for ($i = 11; $i >= 0; $i--) {
-            $key = date('Y-m', strtotime("first day of -{$i} month"));
-            $series[$key] = (int) ($map[$key] ?? 0);
-        }
-
-        return $series;
-    }
-
-    /** @return array<string, int> day (Y-m-d) => revenue, last 30 days, zero filled */
-    public function revenueByDay(int $vendorId): array
-    {
-        $rows = $this->fetchAll(
-            'SELECT DATE(o.created_at) AS bucket, SUM(oi.unit_price * oi.quantity) AS revenue
-             FROM order_items oi JOIN orders o ON o.id = oi.order_id
-             WHERE oi.vendor_id = ? AND oi.status = \'delivered\' AND o.created_at >= DATE_SUB(CURDATE(), INTERVAL 30 DAY)
-             GROUP BY bucket',
-            [$vendorId]
-        );
-        $map = array_column($rows, 'revenue', 'bucket');
-        $series = [];
-        for ($i = 29; $i >= 0; $i--) {
-            $key = date('Y-m-d', strtotime("-{$i} day"));
-            $series[$key] = (int) ($map[$key] ?? 0);
-        }
-
-        return $series;
-    }
-
-    /** @return array<int, array<string, mixed>> */
-    public function topSelling(int $vendorId, int $limit): array
-    {
-        return $this->fetchAll(
-            'SELECT product_name, SUM(quantity) AS qty FROM order_items
-             WHERE vendor_id = :v GROUP BY product_id, product_name ORDER BY qty DESC LIMIT :limit',
-            ['v' => $vendorId, 'limit' => $limit]
+            ['limit' => $limit]
         );
     }
 
     /** @return array<int, array<string, mixed>> */
-    public function topReviewed(int $vendorId, int $limit): array
+    public function recentOrders(int $limit): array
     {
         return $this->fetchAll(
-            'SELECT name, rating_count, rating_avg FROM products
-             WHERE created_by = :v AND rating_count > 0 ORDER BY rating_count DESC, rating_avg DESC LIMIT :limit',
-            ['v' => $vendorId, 'limit' => $limit]
+            'SELECT id, order_code, recipient_name, status, created_at, total_amount
+             FROM orders ORDER BY id DESC LIMIT :limit',
+            ['limit' => $limit]
         );
     }
 }
