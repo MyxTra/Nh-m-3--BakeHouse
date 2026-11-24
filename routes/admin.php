@@ -10,8 +10,8 @@ use App\Controllers\Admin\ContactController;
 use App\Controllers\Admin\DashboardController;
 use App\Controllers\Admin\OrderController;
 use App\Controllers\Admin\ProductController;
+use App\Controllers\Admin\ReportController;
 use App\Controllers\Admin\ReviewController;
-use App\Controllers\Admin\TagController;
 use App\Controllers\Admin\UserController;
 use App\Core\Router;
 use App\Middleware\AdminMiddleware;
@@ -23,22 +23,21 @@ $router->post('/login', [AuthController::class, 'login']);
 $router->group('', [AdminMiddleware::class], static function (Router $router): void {
     $router->post('/logout', [AuthController::class, 'logout']);
     $router->get('/', [DashboardController::class, 'index']);
+    $router->get('/report', [ReportController::class, 'index']);
 
-    // Products (multi-vendor: write actions are guarded by ProductPolicy in the controller)
+    // Products (write actions are guarded by ProductPolicy in the controller)
     $router->get('/products', [ProductController::class, 'index']);
     $router->get('/products/create', [ProductController::class, 'create']);
     $router->post('/products', [ProductController::class, 'store']);
-    $router->get('/products/{id}', [ProductController::class, 'show']);
     $router->get('/products/{id}/edit', [ProductController::class, 'edit']);
     $router->post('/products/{id}', [ProductController::class, 'update']);
     $router->post('/products/{id}/quick', [ProductController::class, 'quickUpdate']);
     $router->post('/products/{id}/delete', [ProductController::class, 'destroy']);
 
-    // Shared lookup resources
+    // Product classification
     $resources = [
         'categories' => CategoryController::class,
         'brands' => BrandController::class,
-        'tags' => TagController::class,
         'banners' => BannerController::class,
     ];
     foreach ($resources as $path => $controller) {
@@ -50,20 +49,27 @@ $router->group('', [AdminMiddleware::class], static function (Router $router): v
         $router->post("/{$path}/{id}/delete", [$controller, 'destroy']);
     }
 
-    $router->get('/users', [UserController::class, 'index']);
-    $router->get('/users/{id}', [UserController::class, 'show']);
-    $router->post('/users/{id}/role', [UserController::class, 'updateRole']);
-    $router->post('/users/{id}/toggle-active', [UserController::class, 'toggleActive']);
-
+    // Orders / fulfilment
     $router->get('/orders', [OrderController::class, 'index']);
     $router->get('/orders/{id}', [OrderController::class, 'show']);
     $router->post('/orders/{id}/status', [OrderController::class, 'updateStatus']);
     $router->post('/orders/{id}/confirm-payment', [OrderController::class, 'confirmPayment']);
 
+    // Customer reviews
     $router->get('/reviews', [ReviewController::class, 'index']);
-    $router->post('/reviews/{id}/toggle', [ReviewController::class, 'toggle']);
+    $router->post('/reviews/{id}/reply', [ReviewController::class, 'reply']);
+    $router->post('/reviews/{id}/toggle-hidden', [ReviewController::class, 'toggleHidden']);
     $router->post('/reviews/{id}/delete', [ReviewController::class, 'destroy']);
 
+    // Customer contact messages
     $router->get('/contacts', [ContactController::class, 'index']);
-    $router->post('/contacts/{id}/status', [ContactController::class, 'updateStatus']);
+    $router->get('/contacts/{id}', [ContactController::class, 'show']);
+    $router->post('/contacts/{id}/reply', [ContactController::class, 'reply']);
+    $router->post('/contacts/{id}/read', [ContactController::class, 'markRead']);
+
+    // Users
+    $router->get('/users', [UserController::class, 'index']);
+    $router->get('/users/{id}', [UserController::class, 'show']);
+    $router->post('/users/{id}/role', [UserController::class, 'updateRole']);
+    $router->post('/users/{id}/toggle-active', [UserController::class, 'toggleActive']);
 });

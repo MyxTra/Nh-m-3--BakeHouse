@@ -9,6 +9,7 @@ use App\Core\Env;
 use App\Enums\OrderStatus;
 use App\Enums\PaymentMethod;
 use App\Repositories\CartRepository;
+use App\Repositories\NotificationRepository;
 use App\Repositories\OrderRepository;
 use DomainException;
 
@@ -16,7 +17,8 @@ final class OrderService
 {
     public function __construct(
         private readonly OrderRepository $orders = new OrderRepository(),
-        private readonly CartRepository $carts = new CartRepository()
+        private readonly CartRepository $carts = new CartRepository(),
+        private readonly NotificationRepository $notifications = new NotificationRepository()
     ) {
     }
 
@@ -58,9 +60,8 @@ final class OrderService
             }
 
             $fee = $this->getShippingFee();
-            $code = $this->generateCode();
             $orderId = $this->orders->createOrder([
-                'order_code' => $code,
+                'order_code' => 'TMP' . bin2hex(random_bytes(8)),
                 'user_id' => $userId,
                 'recipient_name' => $shipping['recipient_name'],
                 'shipping_phone' => $shipping['shipping_phone'],
@@ -72,12 +73,21 @@ final class OrderService
                 'shipping_fee' => $fee,
                 'total_amount' => $subtotal + $fee,
             ]);
+            $code = $this->codeForId($orderId);
+            $this->orders->updateOrderCode($orderId, $code);
 
             foreach ($lines as $productId => $quantity) {
                 $this->orders->createItem($orderId, $products[$productId], $quantity);
                 $this->orders->decrementStock((int) $productId, $quantity);
             }
             $this->orders->createHistory($orderId, null, OrderStatus::Pending->value, $userId);
+            $this->notifications->create(
+                $userId,
+                'order_placed',
+                'Đặt hàng thành công',
+                "Đơn {$code} đã được tiếp nhận, chúng tôi sẽ sớm xử lý.",
+                '/orders/' . $code
+            );
 
             if ($fromCart) {
                 $cartId = $this->carts->getOrCreateCartId($userId);
@@ -90,50 +100,52 @@ final class OrderService
         });
     }
 
-    private function generateCode(): string
+    /** Sequential order code derived from the row id: BH01, BH02, … BH100, … */
+    private function codeForId(int $orderId): string
     {
-        do {
-            $code = 'BH' . date('ymd') . strtoupper(substr(bin2hex(random_bytes(3)), 0, 5));
-        } while ($this->orders->findByCode($code) !== null);
-
-        return $code;
+        return 'BH' . str_pad((string) $orderId, 2, '0', STR_PAD_LEFT);
     }
 
     /**
-     * Move this admin's items in the order forward to $newStatus, then re-derive the overall status.
+     * Move all items in the order forward to $newStatus, then re-derive the overall status.
      *
      * @throws DomainException on invalid transition / permission
      */
-    public function advanceVendorItems(int $orderId, int $adminId, string $newStatus): void
+    public function advanceOrder(int $orderId, int $adminId, string $newStatus): void
     {
         $target = OrderStatus::tryFrom($newStatus);
-        if ($target === null) {
-            throw new DomainException('Trạng thái không hợp lệ.');
-        }
-        $order = $this->orders->findById($orderId);
-        if ($order === null || !$this->orders->hasVendor($orderId, $adminId)) {
-            throw new DomainException('Bạn không có quyền xử lý đơn hàng này.');
+        $order = $target === null ? null : $this->orders->findById($orderId);
+        $current = $order === null ? null : OrderStatus::from($order['status']);
+        if ($current === null || $current->next() !== $target) {
+            throw new DomainException('Cập nhật trạng thái thất bại.');
         }
 
         Database::transaction(function () use ($orderId, $adminId, $target, $order): void {
-            $changed = 0;
-            foreach ($this->orders->vendorItems($orderId, $adminId) as $item) {
-                if (OrderStatus::from($item['status'])->rank() < $target->rank()) {
-                    $this->orders->updateItemStatus((int) $item['id'], $target->value);
-                    $changed++;
-                }
-            }
-            if ($changed === 0) {
-                throw new DomainException('Chỉ được chuyển sang trạng thái tiếp theo, không thể quay lại.');
+            $this->orders->updateAllItemsStatus($orderId, $target->value);
+            $this->orders->updateStatus($orderId, $target->value);
+            $this->orders->createHistory($orderId, $order['status'], $target->value, $adminId);
+            if ($target === OrderStatus::Delivered && $order['payment_method'] === 'cod') {
+                $this->orders->updatePaymentStatus($orderId, 'paid');
             }
 
-            $newOverall = OrderStatus::derive($this->orders->itemStatuses($orderId));
-            if ($newOverall->value !== $order['status']) {
-                $this->orders->updateStatus($orderId, $newOverall->value);
-                $this->orders->createHistory($orderId, $order['status'], $newOverall->value, $adminId);
-                if ($newOverall === OrderStatus::Delivered && $order['payment_method'] === 'cod') {
-                    $this->orders->updatePaymentStatus($orderId, 'paid');
-                }
+            $code = $order['order_code'];
+            $link = '/orders/' . $code;
+            [$type, $title, $message] = match ($target) {
+                OrderStatus::Processing => ['order_processing', 'Đơn hàng đã được xác nhận', "Đơn {$code} đang được chuẩn bị."],
+                OrderStatus::Shipped => ['order_shipped', 'Đơn hàng đang được giao', "Đơn {$code} đang trên đường đến bạn."],
+                OrderStatus::Delivered => ['order_delivered', 'Đơn hàng đã hoàn tất', "Đơn {$code} đã giao thành công."],
+                default => ['order_update', 'Đơn hàng có cập nhật mới', "Đơn {$code} vừa được cập nhật trạng thái."],
+            };
+            $this->notifications->create((int) $order['user_id'], $type, $title, $message, $link);
+
+            if ($target === OrderStatus::Delivered) {
+                $this->notifications->create(
+                    (int) $order['user_id'],
+                    'review_reminder',
+                    'Hãy đánh giá sản phẩm bạn vừa mua',
+                    "Đơn {$code} đã hoàn tất — chia sẻ cảm nhận của bạn để giúp người mua sau nhé!",
+                    $link
+                );
             }
         });
     }
@@ -142,8 +154,8 @@ final class OrderService
     public function confirmPayment(int $orderId, int $adminId): void
     {
         $order = $this->orders->findById($orderId);
-        if ($order === null || !$this->orders->hasVendor($orderId, $adminId)) {
-            throw new DomainException('Bạn không có quyền xử lý đơn hàng này.');
+        if ($order === null) {
+            throw new DomainException('Không tìm thấy đơn hàng.');
         }
         if ($order['payment_method'] !== 'vietqr' || $order['payment_status'] !== 'unpaid') {
             throw new DomainException('Đơn này không cần xác nhận thanh toán.');

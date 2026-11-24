@@ -9,8 +9,7 @@ final class OrderRepository extends BaseRepository
     /** @param array<string, mixed> $data */
     public function createOrder(array $data): int
     {
-        $columns = array_keys($data);
-        $this->execute(
+        $columns = array_keys($data);$this->execute(
             sprintf(
                 'INSERT INTO orders (%s) VALUES (%s)',
                 implode(', ', $columns),
@@ -22,12 +21,12 @@ final class OrderRepository extends BaseRepository
         return (int) $this->db()->lastInsertId();
     }
 
-    public function createItem(int $orderId, array $product, int $quantity): void
+    public function createItem(int $orderId, array $product, int$quantity): void
     {
         $this->execute(
-            'INSERT INTO order_items (order_id, product_id, vendor_id, product_name, unit_price, quantity)
-             VALUES (?, ?, ?, ?, ?, ?)',
-            [$orderId, $product['id'], $product['created_by'], $product['name'], $product['price'], $quantity]
+            'INSERT INTO order_items (order_id, product_id, product_name, unit_price, quantity)
+             VALUES (?, ?, ?, ?, ?)',
+            [$orderId, $product['id'],$product['name'], $product['price'],$quantity]
         );
     }
 
@@ -35,7 +34,7 @@ final class OrderRepository extends BaseRepository
     {
         $this->execute(
             'INSERT INTO order_status_histories (order_id, from_status, to_status, changed_by) VALUES (?, ?, ?, ?)',
-            [$orderId, $from, $to, $changedBy]
+            [$orderId,$from, $to,$changedBy]
         );
     }
 
@@ -45,9 +44,14 @@ final class OrderRepository extends BaseRepository
         return $this->fetchOne('SELECT * FROM products WHERE id = ? AND is_active = 1 FOR UPDATE', [$productId]);
     }
 
-    public function decrementStock(int $productId, int $quantity): void
+    public function decrementStock(int $productId, int$quantity): void
     {
-        $this->execute('UPDATE products SET stock_quantity = stock_quantity - ? WHERE id = ?', [$quantity, $productId]);
+        $this->execute('UPDATE products SET stock_quantity = stock_quantity - ? WHERE id = ?', [$quantity,$productId]);
+    }
+
+    public function updateOrderCode(int $orderId, string$code): void
+    {
+        $this->execute('UPDATE orders SET order_code = ? WHERE id = ?', [$code,$orderId]);
     }
 
     public function findByCode(string $code): ?array
@@ -57,28 +61,23 @@ final class OrderRepository extends BaseRepository
 
     public function findById(int $id): ?array
     {
-        return $this->fetchOne('SELECT * FROM orders WHERE id = ?', [$id]);
+        return $this->fetchOne(
+            'SELECT o.*, u.email AS account_email, u.phone AS account_phone
+             FROM orders o LEFT JOIN users u ON u.id = o.user_id WHERE o.id = ?',
+            [$id]
+        );
     }
 
     /** @return array<int, array<string, mixed>> */
     public function items(int $orderId): array
     {
         return $this->fetchAll(
-            'SELECT oi.*, p.slug AS product_slug, p.image_path,
-                    COALESCE(NULLIF(pr.full_name, \'\'), u.email) AS vendor_name
+            'SELECT oi.*, p.slug AS product_slug, p.image_path
              FROM order_items oi
              LEFT JOIN products p ON p.id = oi.product_id
-             JOIN users u ON u.id = oi.vendor_id
-             LEFT JOIN user_profiles pr ON pr.user_id = u.id
              WHERE oi.order_id = ? ORDER BY oi.id',
             [$orderId]
         );
-    }
-
-    /** @return array<int, string> */
-    public function itemStatuses(int $orderId): array
-    {
-        return array_column($this->fetchAll('SELECT status FROM order_items WHERE order_id = ?', [$orderId]), 'status');
     }
 
     /** @return array<int, array<string, mixed>> */
@@ -100,81 +99,91 @@ final class OrderRepository extends BaseRepository
     }
 
     /** @return array<int, array<string, mixed>> */
-    public function listByUser(int $userId, int $limit, int $offset): array
+    public function listByUser(int $userId, int $limit, int$offset): array
     {
         return $this->fetchAll(
             'SELECT o.*, (SELECT COUNT(*) FROM order_items WHERE order_id = o.id) AS item_count
              FROM orders o WHERE o.user_id = :uid ORDER BY o.id DESC LIMIT :limit OFFSET :offset',
-            ['uid' => $userId, 'limit' => $limit, 'offset' => $offset]
+            ['uid' => $userId, 'limit' => $limit, 'offset' =>$offset]
         );
     }
 
-    public function updateStatus(int $orderId, string $status): void
+    public function updateStatus(int $orderId, string$status): void
     {
-        $this->execute('UPDATE orders SET status = ? WHERE id = ?', [$status, $orderId]);
+        $this->execute('UPDATE orders SET status = ? WHERE id = ?', [$status,$orderId]);
     }
 
-    public function updatePaymentStatus(int $orderId, string $status): void
+    public function updatePaymentStatus(int $orderId, string$status): void
     {
-        $this->execute('UPDATE orders SET payment_status = ? WHERE id = ?', [$status, $orderId]);
+        $this->execute('UPDATE orders SET payment_status = ? WHERE id = ?', [$status,$orderId]);
     }
 
-    public function updateItemStatus(int $itemId, string $status): void
+    public function updateAllItemsStatus(int $orderId, string$status): void
     {
-        $this->execute('UPDATE order_items SET status = ? WHERE id = ?', [$status, $itemId]);
-    }
-
-    /** @return array<int, array<string, mixed>> */
-    public function vendorItems(int $orderId, int $vendorId): array
-    {
-        return $this->fetchAll('SELECT * FROM order_items WHERE order_id = ? AND vendor_id = ?', [$orderId, $vendorId]);
+        $this->execute('UPDATE order_items SET status = ? WHERE order_id = ?', [$status,$orderId]);
     }
 
     /** @return array{0: string, 1: array<string, mixed>} */
-    private function adminWhere(int $vendorId, string $search, string $status): array
+    private function adminWhere(string $search, string$status, ?string $from = null, ?string $to = null): array
     {
-        $clauses = ['EXISTS (SELECT 1 FROM order_items oi WHERE oi.order_id = o.id AND oi.vendor_id = :vendor)'];
-        $params = ['vendor' => $vendorId];
+        $clauses = [];$params = [];
         if ($search !== '') {
-            $clauses[] = '(o.order_code LIKE :q OR o.recipient_name LIKE :q2 OR o.shipping_phone LIKE :q3)';
-            $params['q'] = $params['q2'] = $params['q3'] = $this->likeTerm($search);
+            $clauses[] = '(o.order_code LIKE :q OR o.recipient_name LIKE :q2 OR o.shipping_phone LIKE :q3)';$params['q'] = $params['q2'] =$params['q3'] = $this->likeTerm($search);
         }
-        if (in_array($status, ['pending', 'processing', 'shipped', 'delivered'], true)) {
-            $clauses[] = 'o.status = :status';
-            $params['status'] = $status;
+        if ($status === 'in_progress') {$clauses[] = "o.status <> 'delivered'";
+        } elseif (in_array($status, ['pending', 'processing', 'shipped', 'delivered'], true)) {$clauses[] = 'o.status = :status';
+            $params['status'] =$status;
+        }
+        if ($from !== null) {$clauses[] = 'o.created_at >= :from_dt';
+            $params['from_dt'] =$from . ' 00:00:00';
+        }
+        if ($to !== null) {$clauses[] = 'o.created_at < DATE_ADD(:to_date, INTERVAL 1 DAY)';
+            $params['to_date'] =$to;
         }
 
-        return ['WHERE ' . implode(' AND ', $clauses), $params];
+        return [$clauses === [] ? '' : 'WHERE ' . implode(' AND ', $clauses),$params];
     }
 
-    public function adminCount(int $vendorId, string $search, string $status): int
+    public function adminCount(string $search, string$status, ?string $from = null, ?string $to = null): int
     {
-        [$where, $params] = $this->adminWhere($vendorId, $search, $status);
+        [$where, $params] =$this->adminWhere($search,$status, $from,$to);
 
         return (int) $this->fetchValue("SELECT COUNT(*) FROM orders o {$where}", $params);
     }
 
     /** @return array<int, array<string, mixed>> */
-    public function adminList(int $vendorId, string $search, string $status, int $limit, int $offset): array
+    public function adminList(string $search, string$status, int $limit, int$offset, ?string $from = null, ?string $to = null): array
     {
-        [$where, $params] = $this->adminWhere($vendorId, $search, $status);
-        $params['limit'] = $limit;
-        $params['offset'] = $offset;
-        $params['vendor2'] = $vendorId;
+        [$where, $params] =$this->adminWhere($search,$status, $from,$to);
+        $params['limit'] =$limit;
+        $params['offset'] =$offset;
 
         return $this->fetchAll(
-            "SELECT o.*, (SELECT COALESCE(SUM(oi.unit_price * oi.quantity), 0) FROM order_items oi
-                          WHERE oi.order_id = o.id AND oi.vendor_id = :vendor2) AS vendor_amount
+            "SELECT o.*, (SELECT COALESCE(SUM(oi.quantity), 0) FROM order_items oi WHERE oi.order_id = o.id) AS item_count
              FROM orders o {$where} ORDER BY o.id DESC LIMIT :limit OFFSET :offset",
             $params
         );
     }
 
-    public function hasVendor(int $orderId, int $vendorId): bool
+    /**
+     * Delivered orders matching $search (code/name/phone) within [from, to] (inclusive dates, either bound optional),
+     * oldest first — used by the admin sales report.
+     */
+    public function reportList(string $search, ?string $from, ?string $to): array
     {
-        return (int) $this->fetchValue(
-            'SELECT COUNT(*) FROM order_items WHERE order_id = ? AND vendor_id = ?',
-            [$orderId, $vendorId]
-        ) > 0;
+        $clauses = ["status = 'delivered'"];
+        $params = [];
+        if ($search !== '') {
+            $clauses[] = '(order_code LIKE :q OR recipient_name LIKE :q2 OR shipping_phone LIKE :q3)';$params['q'] = $params['q2'] =$params['q3'] = $this->likeTerm($search);
+        }
+        if ($from !== null) {$clauses[] = 'created_at >= :from';
+            $params['from'] =$from;
+        }
+        if ($to !== null) {$clauses[] = 'created_at < DATE_ADD(:to, INTERVAL 1 DAY)';
+            $params['to'] =$to;
+        }
+        $where = 'WHERE ' . implode(' AND ', $clauses);
+
+        return $this->fetchAll("SELECT * FROM orders {$where} ORDER BY created_at ASC, id ASC", $params);
     }
 }
