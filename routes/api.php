@@ -8,7 +8,8 @@ use App\Core\Router;
 use App\Middleware\AuthMiddleware;
 
 /** @var Router $router */
-$router->post('/chatbot/suggest', [ChatbotApiController::class, 'suggest']);
+$router->post('/chatbot/chat', [ChatbotApiController::class, 'chat']);
+$router->post('/chatbot/stream', [ChatbotApiController::class, 'stream']);
 
 $router->group('/cart', [AuthMiddleware::class], static function (Router $router): void {
     $router->post('/add', [CartApiController::class, 'add']);

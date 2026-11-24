@@ -16,9 +16,18 @@ abstract class BaseController
         return Response::html(View::render($view, $data, $layout));
     }
 
+    private function normalizeRedirectUrl(string $url): string
+    {
+        if ($url === '' || preg_match('#^(https?:)?//#i', $url) === 1) {
+            return $url;
+        }
+
+        return function_exists('url') ? url($url) : $url;
+    }
+
     protected function redirect(string $url): Response
     {
-        return Response::redirect($url);
+        return Response::redirect($this->normalizeRedirectUrl($url));
     }
 
     /** Redirect to the same-site page the user came from, or $fallback (never to an external URL). */
@@ -28,10 +37,12 @@ abstract class BaseController
         $parts = parse_url($referer);
         $host = $_SERVER['HTTP_HOST'] ?? '';
         if ($parts !== false && isset($parts['path']) && (!isset($parts['host']) || $parts['host'] === strtok($host, ':'))) {
-            return Response::redirect($parts['path'] . (isset($parts['query']) ? '?' . $parts['query'] : ''));
+            $target = $parts['path'] . (isset($parts['query']) ? '?' . $parts['query'] : '');
+
+            return Response::redirect($this->normalizeRedirectUrl($target));
         }
 
-        return Response::redirect($fallback);
+        return Response::redirect($this->normalizeRedirectUrl($fallback));
     }
 
     protected function flash(string $type, string $message): void
@@ -44,7 +55,7 @@ abstract class BaseController
     {
         Session::flashInput($request->getAllInput(), $errors);
 
-        return Response::redirect($url);
+        return Response::redirect($this->normalizeRedirectUrl($url));
     }
 
     protected function json(array $data, int $status = 200): Response

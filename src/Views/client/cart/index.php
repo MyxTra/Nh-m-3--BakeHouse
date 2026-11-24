@@ -1,8 +1,8 @@
 <?php /** @var array $cart */ /** @var int $shippingFee */
-partial('hero', ['heroTitle' => 'Giỏ hàng', 'crumbs' => [['Trang chủ', '/'], ['Giỏ hàng', null]]]); ?>
+partial('hero', ['heroTitle' => 'Giỏ hàng', 'crumbs' => [['Trang chủ', url('')], ['Giỏ hàng', null]]]); ?>
 <div class="container py-5">
 <?php if ($cart['items'] === []) : ?>
-    <div class="bh-panel text-center py-5"><i class="bi bi-cart-x fs-1 bh-muted"></i><p class="mt-3">Giỏ hàng của bạn đang trống.</p><a class="bh-btn bh-btn--primary" href="<?= e(url('/products')) ?>">Tiếp tục mua sắm</a></div>
+    <div class="bh-panel text-center py-5"><i class="bi bi-cart-x fs-1 bh-muted"></i><p class="mt-3">Giỏ hàng của bạn đang trống.</p><a class="bh-btn bh-btn--primary" href="<?= e(url('products')) ?>">Tiếp tục mua sắm</a></div>
 <?php else : ?>
     <div class="row g-4">
         <div class="col-lg-8">
@@ -13,7 +13,7 @@ partial('hero', ['heroTitle' => 'Giỏ hàng', 'crumbs' => [['Trang chủ', '/']
                     <tr data-cart-row="<?= (int) $item['product_id'] ?>">
                         <td data-label="Sản phẩm"><div class="d-flex align-items-center gap-3 text-start">
                             <img class="bh-thumb" src="<?= e(img_url($item['image_path'])) ?>" alt="">
-                            <div><a class="fw-semibold text-decoration-none" href="<?= e(url('/products/' . $item['slug'])) ?>"><?= e($item['name']) ?></a>
+                            <div><a class="fw-semibold text-decoration-none" href="<?= e(url('products/' . (string) $item['slug'])) ?>"><?= e($item['name']) ?></a>
                             <?php if (!$item['available']) : ?><div class="small text-danger">Hết hàng / ngừng bán</div><?php endif; ?></div></div></td>
                         <td data-label="Đơn giá"><?= e(format_vnd((int) $item['price'])) ?></td>
                         <td data-label="Số lượng">
@@ -32,12 +32,12 @@ partial('hero', ['heroTitle' => 'Giỏ hàng', 'crumbs' => [['Trang chủ', '/']
         <div class="col-lg-4">
             <div class="bh-panel">
                 <h5>Tóm tắt đơn hàng</h5>
-                <div class="d-flex justify-content-between my-2"><span>Tạm tính</span><strong data-cart-subtotal><?= e(format_vnd($cart['subtotal'])) ?></strong></div>
-                <div class="d-flex justify-content-between my-2"><span>Phí vận chuyển</span><span><?= e(format_vnd($shippingFee)) ?></span></div>
+                <div class="d-flex justify-content-between my-2"><span>Tạm tính</span><strong data-cart-subtotal><?= e(format_vnd((int) $cart['subtotal'])) ?></strong></div>
+                <div class="d-flex justify-content-between my-2"><span>Phí vận chuyển</span><span><?= e(format_vnd((int) $shippingFee)) ?></span></div>
                 <hr>
-                <div class="d-flex justify-content-between mb-3 fs-5"><span>Tổng cộng</span><strong class="bh-price" data-cart-total><?= e(format_vnd($cart['subtotal'] + $shippingFee)) ?></strong></div>
-                <a class="bh-btn bh-btn--primary w-100" href="<?= e(url('/checkout')) ?>">Tiến hành thanh toán</a>
-                <a class="bh-btn bh-btn--outline w-100 mt-2" href="<?= e(url('/products')) ?>">Tiếp tục mua sắm</a>
+                <div class="d-flex justify-content-between mb-3 fs-5"><span>Tổng cộng</span><strong class="bh-price" data-cart-total><?= e(format_vnd((int) $cart['subtotal'] + (int) $shippingFee)) ?></strong></div>
+                <a class="bh-btn bh-btn--primary w-100" href="<?= e(url('checkout')) ?>">Tiến hành thanh toán</a>
+                <a class="bh-btn bh-btn--outline w-100 mt-2" href="<?= e(url('products')) ?>">Tiếp tục mua sắm</a>
             </div>
         </div>
     </div>

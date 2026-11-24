@@ -37,13 +37,23 @@ final class CartService
     public function add(int $userId, int $productId, int $quantity): void
     {
         $product = $this->activeProduct($productId);
+        $stock = (int) $product['stock_quantity'];
         $cartId = $this->carts->getOrCreateCartId($userId);
         $existing = $this->carts->findItem($cartId, $productId);
-        $newQuantity = max(1, $quantity) + (int) ($existing['quantity'] ?? 0);
+        $currentQty = (int) ($existing['quantity'] ?? 0);
+        $addQty = max(1, $quantity);
+        $newQuantity = $addQty + $currentQty;
 
-        if ($newQuantity > (int) $product['stock_quantity']) {
-            throw new DomainException('Chỉ còn ' . (int) $product['stock_quantity'] . ' sản phẩm trong kho.');
+        if ($newQuantity > $stock) {
+            if ($currentQty >= $stock) {
+                throw new DomainException('Bạn đã thêm số lượng tối đa (' . $stock . ') sản phẩm này vào giỏ hàng.');
+            }
+
+            throw new DomainException(
+                'Kho chỉ còn ' . $stock . ' sản phẩm (hiện bạn đã có ' . $currentQty . ' trong giỏ).'
+            );
         }
+
         $this->carts->setQuantity($cartId, $productId, $newQuantity);
     }
 
@@ -56,8 +66,9 @@ final class CartService
             return;
         }
         $product = $this->activeProduct($productId);
-        if ($quantity > (int) $product['stock_quantity']) {
-            throw new DomainException('Chỉ còn ' . (int) $product['stock_quantity'] . ' sản phẩm trong kho.');
+        $stock = (int) $product['stock_quantity'];
+        if ($quantity > $stock) {
+            throw new DomainException('Chỉ còn ' . $stock . ' sản phẩm trong kho.');
         }
         $this->carts->setQuantity($this->carts->getOrCreateCartId($userId), $productId, $quantity);
     }

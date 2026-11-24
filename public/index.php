@@ -1,8 +1,6 @@
 <?php
 
-
 declare(strict_types=1);
-
 
 use App\Core\Env;
 use App\Core\ErrorHandler;
@@ -11,9 +9,7 @@ use App\Core\Router;
 use App\Core\Session;
 use App\Middleware\CsrfMiddleware;
 
-
 define('BASE_PATH', dirname(__DIR__));
-
 
 if (is_file(BASE_PATH . '/vendor/autoload.php')) {
     require BASE_PATH . '/vendor/autoload.php';
@@ -30,17 +26,13 @@ if (is_file(BASE_PATH . '/vendor/autoload.php')) {
 }
 require_once BASE_PATH . '/src/Helpers/functions.php';
 
-
 Env::load(BASE_PATH . '/.env');
-
 
 ErrorHandler::register();
 $request = Request::capture();
 
-
 try {
     Session::start();
-
 
     $router = new Router();
     $router->group('', [CsrfMiddleware::class], static function (Router $router): void {
@@ -53,12 +45,8 @@ try {
         });
     });
 
-
-    router->dispatch(request)->send();
+    $router->dispatch($request)->send();
 } catch (Throwable $e) {
     ErrorHandler::logException($e);
     ErrorHandler::render(500, $request, $e)->send();
 }
-
-
-
