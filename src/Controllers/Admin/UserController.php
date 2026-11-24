@@ -12,6 +12,7 @@ use App\Core\Request;
 use App\Core\Response;
 use App\Repositories\UserRepository;
 
+/** Quản lý người dùng: xem danh sách, đổi vai trò, khóa/mở tài khoản. */
 final class UserController extends BaseController
 {
     public function __construct(private readonly UserRepository $users = new UserRepository())
@@ -32,7 +33,6 @@ final class UserController extends BaseController
             'search' => $search,
             'role' => $role,
             'active' => $active,
-            'currentId' => (int) Auth::id(),
         ], 'layouts.admin');
     }
 
@@ -47,21 +47,31 @@ final class UserController extends BaseController
             'title' => 'Chi tiết người dùng',
             'user' => $user,
             'activity' => $this->users->activitySummary((int) $id),
-            'isSelf' => (int) $id === (int) Auth::id(),
+            'isSelf' => Auth::id() === (int) $id,
         ], 'layouts.admin');
     }
 
     public function updateRole(Request $request, string $id): Response
     {
-        $role = (string) $request->getInput('role');
-        if ((int) $id === (int) Auth::id()) {
-            $this->flash('danger', 'Bạn không thể tự thay đổi vai trò của chính mình.');
-        } elseif ($this->users->findById((int) $id) === null || !in_array($role, ['user', 'admin'], true)) {
+        $user = $this->users->findById((int) $id);
+        if ($user === null) {
             return ErrorHandler::render(404, $request);
-        } else {
-            $this->users->setRole((int) $id, $role);
-            $this->flash('success', 'Đã cập nhật vai trò.');
         }
+        if (Auth::id() === (int) $id) {
+            $this->flash('danger', 'Không thể tự đổi vai trò của chính mình.');
+
+            return $this->redirect('/admin/users/' . (int) $id);
+        }
+
+        $role = (string) $request->getInput('role', '');
+        if (!in_array($role, ['user', 'admin'], true)) {
+            $this->flash('danger', 'Vai trò không hợp lệ.');
+
+            return $this->redirect('/admin/users/' . (int) $id);
+        }
+
+        $this->users->setRole((int) $id, $role);
+        $this->flash('success', 'Đã cập nhật vai trò.');
 
         return $this->redirect('/admin/users/' . (int) $id);
     }
@@ -72,13 +82,16 @@ final class UserController extends BaseController
         if ($user === null) {
             return ErrorHandler::render(404, $request);
         }
-        if ((int) $id === (int) Auth::id()) {
-            $this->flash('danger', 'Bạn không thể tự khóa tài khoản của mình.');
-        } else {
-            $this->users->setActive((int) $id, (int) $user['is_active'] !== 1);
-            $this->flash('success', 'Đã cập nhật trạng thái tài khoản.');
+        if (Auth::id() === (int) $id) {
+            $this->flash('danger', 'Không thể tự khóa tài khoản của chính mình.');
+
+            return $this->redirect('/admin/users/' . (int) $id);
         }
 
-        return $this->redirectBack('/admin/users');
+        $nextActive = !((int) $user['is_active'] === 1);
+        $this->users->setActive((int) $id, $nextActive);
+        $this->flash('success', $nextActive ? 'Đã mở khóa tài khoản.' : 'Đã khóa tài khoản.');
+
+        return $this->redirect('/admin/users/' . (int) $id);
     }
 }
