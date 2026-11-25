@@ -33,7 +33,7 @@ partial('admin-tabs', [
         <span class="bh-muted small">Đến</span>
         <input class="form-control" type="date" name="to_date" value="<?= e($toDate) ?>" style="width: auto;" aria-label="Đến ngày">
     </div>
-    <button class="bh-btn bh-btn--primary" type="submit"><i class="bi bi-funnel"></i> Lọc</button>
+    <button class="bh-btn bh-btn--dark rounded-pill px-3" type="submit"><i class="bi bi-search"></i> Lọc</button>
     <?php if ($search !== '' || $fromDate !== '' || $toDate !== '') : ?>
         <a class="bh-btn bh-btn--outline" href="<?= e(url('admin/contacts' . $resetQuery)) ?>">Xóa lọc</a>
     <?php endif; ?>

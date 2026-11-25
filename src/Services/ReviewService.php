@@ -19,7 +19,7 @@ final class ReviewService
     }
 
     /**
-     * Create or update the user's single review of a product.
+     * Create or update the user's review of a product.
      *
      * @throws DomainException when the user has not received the product
      */
@@ -32,10 +32,5 @@ final class ReviewService
             throw new DomainException('Số sao phải từ 1 đến 5.');
         }
         $this->reviews->save($userId, $productId, $rating, $comment);
-    }
-
-    public function remove(int $userId, int $productId): void
-    {
-        $this->reviews->deleteByUserAndProduct($userId, $productId);
     }
 }

@@ -42,16 +42,4 @@ final class ReviewController extends BaseController
 
         return $this->redirect('/products/' . $slug . '#reviews');
     }
-
-    public function delete(Request $request, string $slug): Response
-    {
-        $product = (new ProductRepository())->findBySlug($slug);
-        if ($product === null) {
-            return ErrorHandler::render(404, $request);
-        }
-        (new ReviewService())->remove((int) Auth::id(), (int) $product['id']);
-        $this->flash('success', 'Đã xóa đánh giá của bạn.');
-
-        return $this->redirect('/products/' . $slug . '#reviews');
-    }
 }

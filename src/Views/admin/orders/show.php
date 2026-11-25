@@ -13,6 +13,7 @@ $safeReturn = ($rawReturn !== '' && str_starts_with($rawReturn, '/') && !str_sta
     ? $rawReturn
     : '';
 $backUrl = $safeReturn !== '' ? $safeReturn : url('admin/orders');
+$paymentBlocked = $order['payment_method'] === 'vietqr' && $order['payment_status'] === 'unpaid';
 ?>
 <div class="row g-3">
     <div class="col-lg-8">
@@ -66,6 +67,8 @@ $backUrl = $safeReturn !== '' ? $safeReturn : url('admin/orders');
             <div class="adm-card__head"><h2>Cập nhật trạng thái</h2></div>
             <?php if ($next === null) : ?>
                 <p class="bh-muted mb-0"><i class="bi bi-check-circle text-success"></i> Đơn hàng đã hoàn tất.</p>
+            <?php elseif ($paymentBlocked) : ?>
+                <p class="mb-0 text-danger"><i class="bi bi-exclamation-triangle"></i> Đơn thanh toán VietQR chưa được xác nhận nhận tiền. Vui lòng xác nhận ở mục Thanh toán trước khi cập nhật trạng thái.</p>
             <?php else : ?>
                 <form method="post" action="<?= e(url('admin/orders/' . $orderId . '/status')) ?>"><?= csrf_field() ?>
                     <input type="hidden" name="return_url" value="<?= e($backUrl) ?>">

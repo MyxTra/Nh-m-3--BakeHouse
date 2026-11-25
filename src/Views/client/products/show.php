@@ -48,7 +48,7 @@ partial('hero', [
             <div class="bh-price fs-2 mb-3"><?= e(format_vnd((int) $product['price'])) ?> <small class="bh-muted fs-6">/ <?= e($product['unit']) ?></small></div>
             <p class="bh-muted"><?= nl2br(e($product['description'] ?? '')) ?></p>
             <p>Tình trạng: <?= $inStock ? '<span class="text-success fw-semibold">Còn ' . (int) $product['stock_quantity'] . ' sản phẩm</span>' : '<span class="text-danger fw-semibold">Hết hàng</span>' ?></p>
-        
+       
             <?php if ($inStock) : ?>
                 <form id="bhBuyNow" action="<?= e(url('checkout')) ?>" method="get" class="d-flex flex-wrap gap-3 align-items-center mt-4">
                     <input type="hidden" name="buy_now" value="<?= (int) $product['id'] ?>">
@@ -67,26 +67,27 @@ partial('hero', [
     <section id="reviews" class="mt-5 pt-3">
         <h3 class="mb-4">Đánh giá sản phẩm</h3>
         <?php if ($canReview && $myReview) : ?>
-            <div class="bh-panel mb-4">
-                <div class="d-flex justify-content-between align-items-start flex-wrap gap-2">
-                    <div>
-                        <h5 class="mb-1">Đánh giá của bạn</h5>
-                        <?= render_stars((float) $myReview['rating']) ?>
-                        <p class="mb-0 mt-2"><?= nl2br(e($myReview['comment'] ?? '')) ?></p>
-                    </div>
-                    <div class="d-flex gap-2 flex-shrink-0">
-                        <button class="bh-btn bh-btn--outline bh-btn--sm" type="button" data-bs-toggle="collapse" data-bs-target="#bhEditReview"><i class="bi bi-pencil"></i> Chỉnh sửa</button>
-                        <form method="post" action="<?= e(url('products/' . $slug . '/review/delete')) ?>" data-confirm="Bạn có chắc muốn xóa đánh giá của mình?">
-                            <?= csrf_field() ?>
-                            <button class="bh-btn bh-btn--dark bh-btn--sm" type="submit"><i class="bi bi-trash"></i> Xóa đánh giá</button>
-                        </form>
+            <?php $currentRating = (int) ($myReview['rating'] ?? 5); ?>
+            <div class="bh-panel mb-4" id="bhMyReviewCard">
+                <div id="bhMyReviewView">
+                    <div class="d-flex justify-content-between align-items-start flex-wrap gap-2">
+                        <div>
+                            <h5 class="mb-1">Đánh giá của bạn</h5>
+                            <?= render_stars((float) $myReview['rating']) ?>
+                            <p class="mb-0 mt-2"><?= nl2br(e($myReview['comment'] ?? '')) ?></p>
+                        </div>
+                        <div class="d-flex gap-2 flex-shrink-0">
+                            <button type="button" class="bh-btn bh-btn--outline bh-btn--sm" id="bhToggleEditReviewBtn">
+                                <i class="bi bi-pencil-square"></i> Sửa đánh giá
+                            </button>
+                        </div>
                     </div>
                 </div>
-                <div class="collapse<?= form_error('rating') || form_error('comment') ? ' show' : '' ?> mt-3" id="bhEditReview">
-                    <hr>
+
+                <div id="bhEditReviewForm" class="d-none">
+                    <h5 class="mb-2">Đánh giá của bạn</h5>
                     <form method="post" action="<?= e(url('products/' . $slug . '/review')) ?>">
                         <?= csrf_field() ?>
-                        <?php $currentRating = (int) ($myReview['rating'] ?? 5); ?>
                         <div class="bh-rating-input mb-2">
                             <?php for ($star = 5; $star >= 1; $star--) : ?>
                                 <input type="radio" id="star<?= $star ?>" name="rating" value="<?= $star ?>"<?= $currentRating === $star ? ' checked' : '' ?>>
@@ -95,7 +96,10 @@ partial('hero', [
                         </div>
                         <textarea class="form-control mb-3" name="comment" rows="3" maxlength="1000" placeholder="Chia sẻ cảm nhận của bạn…"><?= e($myReview['comment'] ?? '') ?></textarea>
                         <?= form_error('rating') ?><?= form_error('comment') ?>
-                        <button class="bh-btn bh-btn--primary" type="submit">Cập nhật đánh giá</button>
+                        <div class="d-flex gap-2">
+                            <button class="bh-btn bh-btn--primary bh-btn--sm" type="submit">Cập nhật đánh giá</button>
+                            <button class="bh-btn bh-btn--outline bh-btn--sm" type="button" id="bhCancelEditReviewBtn">Hủy</button>
+                        </div>
                     </form>
                 </div>
             </div>
@@ -150,3 +154,26 @@ partial('hero', [
         </section>
     <?php endif; ?>
 </div>
+
+<script>
+document.addEventListener('DOMContentLoaded', function () {
+    const editBtn = document.getElementById('bhToggleEditReviewBtn');
+    const cancelBtn = document.getElementById('bhCancelEditReviewBtn');
+    const viewBox = document.getElementById('bhMyReviewView');
+    const formBox = document.getElementById('bhEditReviewForm');
+
+    if (editBtn && cancelBtn && viewBox && formBox) {
+        editBtn.addEventListener('click', function () {
+            viewBox.classList.add('d-none');
+            formBox.classList.remove('d-none');
+            const textarea = formBox.querySelector('textarea[name="comment"]');
+            if (textarea) textarea.focus();
+        });
+
+        cancelBtn.addEventListener('click', function () {
+            formBox.classList.add('d-none');
+            viewBox.classList.remove('d-none');
+        });
+    }
+});
+</script>

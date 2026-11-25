@@ -15,6 +15,7 @@ use App\Controllers\Client\ProductController;
 use App\Controllers\Client\ReviewController;
 use App\Core\Router;
 use App\Middleware\AuthMiddleware;
+use App\Middleware\DenyAdminAsCustomerMiddleware;
 use App\Middleware\GuestMiddleware;
 
 /** @var Router $router */
@@ -44,11 +45,11 @@ $router->post('/forgot-password/reset', [AuthController::class, 'resetDirect'], 
 $router->group('', [AuthMiddleware::class], static function (Router $router): void {
     $router->post('/logout', [AuthController::class, 'logout']);
     $router->get('/account', [AccountController::class, 'show']);
-    $router->post('/account', [AccountController::class, 'update']);
+    $router->post('/account', [AccountController::class, 'update'], [DenyAdminAsCustomerMiddleware::class]);
 
     $router->get('/cart', [CartController::class, 'index']);
-    $router->get('/checkout', [CheckoutController::class, 'show']);
-    $router->post('/checkout', [CheckoutController::class, 'store']);
+    $router->get('/checkout', [CheckoutController::class, 'show'], [DenyAdminAsCustomerMiddleware::class]);
+    $router->post('/checkout', [CheckoutController::class, 'store'], [DenyAdminAsCustomerMiddleware::class]);
     $router->get('/orders', [OrderController::class, 'index']);
     $router->get('/orders/{code}', [OrderController::class, 'show']);
     $router->get('/contacts', [ContactController::class, 'index']);
@@ -56,6 +57,5 @@ $router->group('', [AuthMiddleware::class], static function (Router $router): vo
     $router->get('/notifications', [NotificationController::class, 'index']);
     $router->post('/notifications/mark-read', [NotificationController::class, 'markRead']);
 
-    $router->post('/products/{slug}/review', [ReviewController::class, 'save']);
-    $router->post('/products/{slug}/review/delete', [ReviewController::class, 'delete']);
+    $router->post('/products/{slug}/review', [ReviewController::class, 'save'], [DenyAdminAsCustomerMiddleware::class]);
 });

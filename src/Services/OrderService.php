@@ -119,6 +119,9 @@ final class OrderService
         if ($current === null || $current->next() !== $target) {
             throw new DomainException('Cập nhật trạng thái thất bại.');
         }
+        if ($order['payment_method'] === 'vietqr' && $order['payment_status'] === 'unpaid') {
+            throw new DomainException('Vui lòng xác nhận đã nhận tiền chuyển khoản trước khi cập nhật trạng thái đơn hàng.');
+        }
 
         Database::transaction(function () use ($orderId, $adminId, $target, $order): void {
             $this->orders->updateAllItemsStatus($orderId, $target->value);
@@ -137,6 +140,7 @@ final class OrderService
                 default => ['order_update', 'Đơn hàng có cập nhật mới', "Đơn {$code} vừa được cập nhật trạng thái."],
             };
             $this->notifications->create((int) $order['user_id'], $type, $title, $message, $link);
+
 
             if ($target === OrderStatus::Delivered) {
                 $this->notifications->create(
