@@ -74,7 +74,7 @@ final class ContactController extends BaseController
         }
 
         $reply = trim((string) $request->getInput('admin_reply'));
-        $back = '/admin/contacts/' . (int) $id;
+        $back = '/admin/contacts/' . (int) $id . $this->filterQuerySuffix($request);
         if ($reply === '') {
             return $this->redirectWithErrors($request, $back, ['admin_reply' => 'Vui lòng nhập nội dung phản hồi.']);
         }
@@ -95,6 +95,34 @@ final class ContactController extends BaseController
         $this->flash('success', 'Đã gửi phản hồi. Khách sẽ thấy trong mục "Liên hệ của tôi".');
 
         return $this->redirect($back);
+    }
+
+    private function filterQuerySuffix(Request $request): string
+    {
+        $status = (string) ($request->getInput('status', $request->getQuery('status', '')) ?? '');
+        if (!in_array($status, self::STATUSES, true)) {
+            $status = '';
+        }
+
+        $q = trim((string) ($request->getInput('q', $request->getQuery('q', '')) ?? ''));
+        $fromDate = $this->normalizeDate((string) ($request->getInput('from_date', $request->getQuery('from_date', '')) ?? ''));
+        $toDate = $this->normalizeDate((string) ($request->getInput('to_date', $request->getQuery('to_date', '')) ?? ''));
+        if ($fromDate !== '' && $toDate !== '' && $fromDate > $toDate) {
+            [$fromDate, $toDate] = [$toDate, $fromDate];
+        }
+
+        $pageRaw = (string) ($request->getInput('page', $request->getQuery('page', '1')) ?? '1');
+        $page = ctype_digit($pageRaw) && (int) $pageRaw > 1 ? (int) $pageRaw : 1;
+
+        $params = array_filter([
+            'status' => $status !== '' ? $status : null,
+            'q' => $q !== '' ? $q : null,
+            'from_date' => $fromDate !== '' ? $fromDate : null,
+            'to_date' => $toDate !== '' ? $toDate : null,
+            'page' => $page > 1 ? $page : null,
+        ], static fn (mixed $v): bool => $v !== null);
+
+        return $params !== [] ? '?' . http_build_query($params) : '';
     }
 
     private function normalizeDate(string $value): string

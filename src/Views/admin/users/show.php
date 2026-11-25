@@ -1,8 +1,22 @@
 <?php /** @var array $user */ /** @var array{orders:int, spent:int, reviews:int} $activity */ /** @var bool $isSelf */
 $isAdmin = ($user['role'] ?? '') === 'admin';
 $isActive = (int) ($user['is_active'] ?? 0) === 1;
-$id = (int) $user['id']; ?>
-<div class="mb-3"><a class="adm-back" href="<?= e(url('admin/users')) ?>"><i class="bi bi-arrow-left"></i> Danh sách người dùng</a></div>
+$id = (int) $user['id'];
+
+$backQ = isset($_GET['q']) ? trim((string) $_GET['q']) : '';
+$backRole = isset($_GET['role']) && in_array($_GET['role'], ['user', 'admin'], true) ? (string) $_GET['role'] : '';
+$backActive = isset($_GET['active']) && in_array($_GET['active'], ['1', '0'], true) ? (string) $_GET['active'] : '';
+$backPage = isset($_GET['page']) && ctype_digit((string) $_GET['page']) && (int) $_GET['page'] > 1
+    ? (int) $_GET['page']
+    : 1;
+$backParams = array_filter([
+    'q' => $backQ !== '' ? $backQ : null,
+    'role' => $backRole !== '' ? $backRole : null,
+    'active' => $backActive !== '' ? $backActive : null,
+    'page' => $backPage > 1 ? $backPage : null,
+], static fn (mixed $val): bool => $val !== null);
+$backUrl = url('admin/users') . ($backParams !== [] ? '?' . http_build_query($backParams) : ''); ?>
+<div class="mb-3"><a class="adm-back" href="<?= e($backUrl) ?>"><i class="bi bi-arrow-left"></i> Danh sách người dùng</a></div>
 <div class="adm-contact-detail">
     <section class="adm-card">
         <div class="d-flex align-items-center gap-3 mb-3">
@@ -29,6 +43,10 @@ $id = (int) $user['id']; ?>
         <h2 class="adm-contact-detail__title mb-3">Quản lý tài khoản</h2>
         <form method="post" action="<?= e(url('admin/users/' . $id . '/role')) ?>" class="d-flex gap-2 mb-3">
             <?= csrf_field() ?>
+            <?php if ($backQ !== '') : ?><input type="hidden" name="q" value="<?= e($backQ) ?>"><?php endif; ?>
+            <?php if ($backRole !== '') : ?><input type="hidden" name="role" value="<?= e($backRole) ?>"><?php endif; ?>
+            <?php if ($backActive !== '') : ?><input type="hidden" name="active" value="<?= e($backActive) ?>"><?php endif; ?>
+            <?php if ($backPage > 1) : ?><input type="hidden" name="page" value="<?= (int) $backPage ?>"><?php endif; ?>
             <select class="form-select" name="role" aria-label="Vai trò">
                 <option value="user"<?= !$isAdmin ? ' selected' : '' ?>>Người dùng</option>
                 <option value="admin"<?= $isAdmin ? ' selected' : '' ?>>Quản trị viên</option>
@@ -37,9 +55,13 @@ $id = (int) $user['id']; ?>
         </form>
         <form method="post" action="<?= e(url('admin/users/' . $id . '/toggle-active')) ?>" data-confirm="<?= $isActive ? 'Vô hiệu hóa tài khoản này?' : 'Mở khóa tài khoản này?' ?>">
             <?= csrf_field() ?>
+            <?php if ($backQ !== '') : ?><input type="hidden" name="q" value="<?= e($backQ) ?>"><?php endif; ?>
+            <?php if ($backRole !== '') : ?><input type="hidden" name="role" value="<?= e($backRole) ?>"><?php endif; ?>
+            <?php if ($backActive !== '') : ?><input type="hidden" name="active" value="<?= e($backActive) ?>"><?php endif; ?>
+            <?php if ($backPage > 1) : ?><input type="hidden" name="page" value="<?= (int) $backPage ?>"><?php endif; ?>
             <button class="bh-btn bh-btn--dark w-100 mb-3" type="submit"><?= $isActive ? 'Vô hiệu hóa tài khoản' : 'Mở khóa tài khoản' ?></button>
         </form>
-        <a class="bh-btn bh-btn--outline" href="<?= e(url('admin/users')) ?>">Quay lại</a>
+        <a class="bh-btn bh-btn--outline" href="<?= e($backUrl) ?>">Quay lại</a>
     </aside>
     <?php endif; ?>
 </div>

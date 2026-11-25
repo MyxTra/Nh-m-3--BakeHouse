@@ -36,7 +36,7 @@ partial('hero', ['heroTitle' => 'Giỏ hàng', 'crumbs' => [['Trang chủ', url(
                 <div class="d-flex justify-content-between my-2"><span>Phí vận chuyển</span><span><?= e(format_vnd((int) $shippingFee)) ?></span></div>
                 <hr>
                 <div class="d-flex justify-content-between mb-3 fs-5"><span>Tổng cộng</span><strong class="bh-price" data-cart-total><?= e(format_vnd((int) $cart['subtotal'] + (int) $shippingFee)) ?></strong></div>
-                <a class="bh-btn bh-btn--primary w-100" href="<?= e(url('checkout')) ?>">Tiến hành thanh toán</a>
+                <a class="bh-btn bh-btn--primary w-100" href="<?= e(url('checkout')) ?>">Mua ngay</a>
                 <a class="bh-btn bh-btn--outline w-100 mt-2" href="<?= e(url('products')) ?>">Tiếp tục mua sắm</a>
             </div>
         </div>

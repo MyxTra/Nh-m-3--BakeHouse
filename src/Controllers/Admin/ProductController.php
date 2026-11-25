@@ -151,7 +151,8 @@ final class ProductController extends BaseController
     private function save(Request $request, ?array $existing): Response
     {
         $input = $request->getAllInput();
-        $formUrl = $existing ? '/admin/products/' . (int) $existing['id'] . '/edit' : '/admin/products/create';
+        $querySuffix = $this->filterQuerySuffix($input);
+        $formUrl = ($existing ? '/admin/products/' . (int) $existing['id'] . '/edit' : '/admin/products/create') . $querySuffix;
 
         $validator = new Validator($input, [
             'name' => 'required|max:190',
@@ -244,6 +245,26 @@ final class ProductController extends BaseController
             ErrorHandler::logException($e);
         }
 
-        return $this->redirect('/admin/products');
+        return $this->redirect('/admin/products' . $querySuffix);
+    }
+
+    private function filterQuerySuffix(array $input): string
+    {
+        $view = (string) ($input['view'] ?? '');
+        if (!in_array($view, ['active', 'restock', 'hidden'], true)) {
+            $view = '';
+        }
+        $q = trim((string) ($input['q'] ?? ''));
+        $category = (int) ($input['category'] ?? 0);
+        $page = (int) ($input['page'] ?? 1);
+
+        $params = array_filter([
+            'view' => $view !== '' ? $view : null,
+            'q' => $q !== '' ? $q : null,
+            'category' => $category > 0 ? $category : null,
+            'page' => $page > 1 ? $page : null,
+        ], static fn (mixed $v): bool => $v !== null);
+
+        return $params !== [] ? '?' . http_build_query($params) : '';
     }
 }

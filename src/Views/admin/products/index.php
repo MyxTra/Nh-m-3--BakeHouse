@@ -1,6 +1,16 @@
 <?php /** @var array $rows */ /** @var \App\Core\Paginator $paginator */ /** @var array $categories */ /** @var array $counts */
 /** @var string $search */ /** @var int $categoryId */ /** @var string $view */
 $restock = \App\Repositories\ProductRepository::RESTOCK_AT;
+$currentPage = isset($_GET['page']) && ctype_digit((string) $_GET['page']) && (int) $_GET['page'] > 1
+    ? (int) $_GET['page']
+    : 1;
+$filterQuery = array_filter([
+    'view' => $view !== '' ? $view : null,
+    'q' => $search !== '' ? $search : null,
+    'category' => $categoryId > 0 ? $categoryId : null,
+    'page' => $currentPage > 1 ? $currentPage : null,
+], static fn (mixed $v): bool => $v !== null);
+$querySuffix = $filterQuery !== [] ? '?' . http_build_query($filterQuery) : '';
 partial('admin-tabs', [
     'param' => 'view', 'current' => $view,
     'tabs' => ['' => 'Tất cả', 'active' => 'Đang bán', 'restock' => 'Cần nhập thêm', 'hidden' => 'Đã ẩn'],
@@ -20,7 +30,7 @@ partial('admin-filter', [
         <tbody>
         <?php foreach ($rows as $row) :
             $stock = (int) $row['stock_quantity'];
-            $editUrl = url('admin/products/' . (int) $row['id'] . '/edit'); ?>
+            $editUrl = url('admin/products/' . (int) $row['id'] . '/edit') . $querySuffix; ?>
             <tr>
                 <td class="adm-main"><div class="adm-cell">
                     <img class="adm-thumb" src="<?= e(img_url($row['image_path'])) ?>" alt="" loading="lazy">
@@ -30,7 +40,7 @@ partial('admin-filter', [
                 <td class="adm-hide-sm" data-label="Danh mục"><?= e($row['category_name']) ?></td>
                 <td data-label="Giá / Tồn kho">
                     <form class="adm-quick" method="post" action="<?= e(url('admin/products/' . (int) $row['id'] . '/quick')) ?>"><?= csrf_field() ?>
-                        <input class="form-control adm-price" type="number" min="0" step="500" name="price" value="<?= (int) $row['price'] ?>" aria-label="Giá của <?= e($row['name']) ?>">
+                        <input class="form-control adm-price" type="number" min="0" name="price" value="<?= (int) $row['price'] ?>" aria-label="Giá của <?= e($row['name']) ?>">
                         <input class="form-control adm-stock" type="number" min="0" name="stock_quantity" value="<?= $stock ?>" aria-label="Tồn kho của <?= e($row['name']) ?>">
                         <button class="bh-btn bh-btn--outline bh-btn--sm" type="submit" title="Lưu giá và tồn kho"><i class="bi bi-check2"></i></button>
                     </form>

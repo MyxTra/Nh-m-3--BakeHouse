@@ -4,9 +4,30 @@ $v = static fn (string $key, mixed $default = '') => old($key, (string) ($produc
 $selectedCategory = (string) old('category_id', (string) ($product['category_id'] ?? ''));
 $selectedBrand = (string) old('brand_id', (string) ($product['brand_id'] ?? ''));
 $isActive = old('is_active') !== '' ? old('is_active') === '1' : (!$product || !empty($product['is_active']));
-$isFeatured = old('is_featured') !== '' ? old('is_featured') === '1' : !empty($product['is_featured']); ?>
+$isFeatured = old('is_featured') !== '' ? old('is_featured') === '1' : !empty($product['is_featured']);
+
+$allowedViews = ['active', 'restock', 'hidden'];
+$rawView = (string) old('view', (string) ($_GET['view'] ?? ''));
+$backView = in_array($rawView, $allowedViews, true) ? $rawView : '';
+$backQ = trim((string) old('q', (string) ($_GET['q'] ?? '')));
+$rawCategory = (string) old('category', (string) ($_GET['category'] ?? '0'));
+$backCategory = ctype_digit($rawCategory) && (int) $rawCategory > 0 ? (int) $rawCategory : 0;
+$rawPage = (string) old('page', (string) ($_GET['page'] ?? '1'));
+$backPage = ctype_digit($rawPage) && (int) $rawPage > 1 ? (int) $rawPage : 1;
+
+$backParams = array_filter([
+    'view' => $backView !== '' ? $backView : null,
+    'q' => $backQ !== '' ? $backQ : null,
+    'category' => $backCategory > 0 ? $backCategory : null,
+    'page' => $backPage > 1 ? $backPage : null,
+], static fn (mixed $val): bool => $val !== null);
+$cancelUrl = url('admin/products') . ($backParams !== [] ? '?' . http_build_query($backParams) : ''); ?>
 <form method="post" action="<?= e($action) ?>" enctype="multipart/form-data" novalidate>
     <?= csrf_field() ?>
+    <?php if ($backView !== '') : ?><input type="hidden" name="view" value="<?= e($backView) ?>"><?php endif; ?>
+    <?php if ($backQ !== '') : ?><input type="hidden" name="q" value="<?= e($backQ) ?>"><?php endif; ?>
+    <?php if ($backCategory > 0) : ?><input type="hidden" name="category" value="<?= (int) $backCategory ?>"><?php endif; ?>
+    <?php if ($backPage > 1) : ?><input type="hidden" name="page" value="<?= (int) $backPage ?>"><?php endif; ?>
     <div class="adm-form">
         <section class="adm-card">
             <div class="mb-3"><label class="form-label" for="name">Tên sản phẩm</label><input class="form-control" id="name" name="name" value="<?= $v('name') ?>" required><?= form_error('name') ?></div>
@@ -19,7 +40,7 @@ $isFeatured = old('is_featured') !== '' ? old('is_featured') === '1' : !empty($p
                         <?php foreach ($brands as $b) : ?><option value="<?= (int) $b['id'] ?>"<?= $selectedBrand === (string) $b['id'] ? ' selected' : '' ?>><?= e($b['name']) ?></option><?php endforeach; ?></select></div>
             </div>
             <div class="row g-3 mb-3">
-                <div class="col-sm-4"><label class="form-label" for="price">Giá bán (₫)</label><input class="form-control" id="price" type="number" min="0" step="500" name="price" value="<?= $v('price', '0') ?>" required><?= form_error('price') ?></div>
+                <div class="col-sm-4"><label class="form-label" for="price">Giá bán (₫)</label><input class="form-control" id="price" type="number" min="0" name="price" value="<?= $v('price', '0') ?>" required><?= form_error('price') ?></div>
                 <div class="col-sm-4"><label class="form-label" for="stock_quantity">Tồn kho</label><input class="form-control" id="stock_quantity" type="number" min="0" name="stock_quantity" value="<?= $v('stock_quantity', '0') ?>" required><?= form_error('stock_quantity') ?></div>
                 <div class="col-sm-4"><label class="form-label" for="unit">Đơn vị tính</label><input class="form-control" id="unit" name="unit" value="<?= $v('unit', 'gói') ?>" placeholder="gói 1kg, hộp, cái…" required><?= form_error('unit') ?></div>
             </div>
@@ -46,5 +67,5 @@ $isFeatured = old('is_featured') !== '' ? old('is_featured') === '1' : !empty($p
             <?php endif; ?>
         </section>
     </div>
-    <div class="adm-savebar"><button class="bh-btn bh-btn--primary" type="submit">Lưu sản phẩm</button><a class="bh-btn bh-btn--outline" href="<?= e(url('admin/products')) ?>">Hủy</a></div>
+    <div class="adm-savebar"><button class="bh-btn bh-btn--primary" type="submit">Lưu sản phẩm</button><a class="bh-btn bh-btn--outline" href="<?= e($cancelUrl) ?>">Hủy</a></div>
 </form>

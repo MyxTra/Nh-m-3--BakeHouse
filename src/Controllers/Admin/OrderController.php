@@ -85,12 +85,7 @@ final class OrderController extends BaseController
             $this->flash('danger', $e->getMessage());
         }
 
-        $target = '/admin/orders/' . $orderId;
-        if ($returnUrl !== url('admin/orders')) {
-            $target .= '?return_url=' . urlencode($returnUrl);
-        }
-
-        return $this->redirect($target);
+        return $this->redirect($this->orderDetailRedirectUrl($orderId, $returnUrl));
     }
 
     public function confirmPayment(Request $request, string $id): Response
@@ -104,12 +99,20 @@ final class OrderController extends BaseController
             $this->flash('danger', $e->getMessage());
         }
 
-        $target = '/admin/orders/' . $orderId;
-        if ($returnUrl !== url('admin/orders')) {
+        return $this->redirect($this->orderDetailRedirectUrl($orderId, $returnUrl));
+    }
+
+    private function orderDetailRedirectUrl(int $orderId, string $returnUrl): string
+    {
+        $target = url('admin/orders/' . $orderId);
+        $defaultPath = (string) parse_url(url('admin/orders'), PHP_URL_PATH);
+        $returnPath = (string) parse_url($returnUrl, PHP_URL_PATH);
+
+        if ($returnPath !== '' && rtrim($returnPath, '/') !== rtrim($defaultPath, '/')) {
             $target .= '?return_url=' . urlencode($returnUrl);
         }
 
-        return $this->redirect($target);
+        return $target;
     }
 
     private function normalizeDate(string $raw): ?string

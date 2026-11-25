@@ -1,5 +1,5 @@
 <?php
-/** @var array $product */ /** @var array $images */ /** @var array $tags */ /** @var array $related */
+/** @var array $product */ /** @var array $images */ /** @var array $related */
 /** @var array $reviews */ /** @var \App\Core\Paginator $paginator */ /** @var ?array $myReview */ /** @var bool $canReview */
 $gallery = [];
 if (!empty($product['image_path'])) { $gallery[] = img_url($product['image_path']); }

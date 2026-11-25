@@ -1,6 +1,31 @@
 <?php /** @var array $items */ /** @var int $subtotal */ /** @var int $shippingFee */ /** @var string $mode */ /** @var ?array $buyNow */ /** @var array $user */
+$defaultBackUrl = ($mode === 'buy_now' && !empty($buyNow['product_id']))
+    ? url('products/' . (int) $buyNow['product_id'])
+    : url('cart');
+
+$backUrl = $defaultBackUrl;
+$referer = (string) ($_SERVER['HTTP_REFERER'] ?? '');
+if ($referer !== '') {
+    $refParts = parse_url($referer);
+    $host = (string) ($_SERVER['HTTP_HOST'] ?? '');
+    $refHost = (string) ($refParts['host'] ?? '');
+    $refPort = isset($refParts['port']) ? ':' . (int) $refParts['port'] : '';
+    $refOriginMatch = $host !== '' && $refHost !== '' && (strtolower($refHost . $refPort) === strtolower($host));
+    $refPath = (string) ($refParts['path'] ?? '');
+    $isSelfCheckout = str_ends_with(rtrim($refPath, '/'), '/checkout');
+
+    if ($refOriginMatch && !$isSelfCheckout && preg_match('#^https?://#i', $referer)) {
+        $backUrl = $referer;
+    }
+}
+
 partial('hero', ['heroTitle' => 'Thanh toán', 'crumbs' => [['Trang chủ', url('')], ['Giỏ hàng', url('cart')], ['Thanh toán', null]]]); ?>
 <div class="container py-5">
+    <div class="mb-3">
+        <a class="bh-btn bh-btn--outline bh-btn--sm" href="<?= e($backUrl) ?>">
+            <i class="bi bi-arrow-left"></i> Quay lại
+        </a>
+    </div>
     <form method="post" action="<?= e(url('checkout')) ?>" novalidate>
         <?= csrf_field() ?>
         <input type="hidden" name="mode" value="<?= e($mode) ?>">

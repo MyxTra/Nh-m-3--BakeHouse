@@ -8,6 +8,18 @@ $keepParams = array_filter([
     'to_date' => $toDate !== '' ? $toDate : null,
 ], static fn ($v) => $v !== null);
 
+$currentPage = isset($_GET['page']) && ctype_digit((string) $_GET['page']) && (int) $_GET['page'] > 1
+    ? (int) $_GET['page']
+    : 1;
+$filterQuery = array_filter([
+    'status' => $status !== '' ? $status : null,
+    'q' => $search !== '' ? $search : null,
+    'from_date' => $fromDate !== '' ? $fromDate : null,
+    'to_date' => $toDate !== '' ? $toDate : null,
+    'page' => $currentPage > 1 ? $currentPage : null,
+], static fn (mixed $v): bool => $v !== null);
+$querySuffix = $filterQuery !== [] ? '?' . http_build_query($filterQuery) : '';
+
 $resetQuery = $status !== '' ? '?status=' . urlencode($status) : '';
 
 partial('admin-tabs', [
@@ -45,7 +57,7 @@ partial('admin-tabs', [
     $statusKey = $isReplied ? 'replied' : 'new';
     $initial = mb_strtoupper(mb_substr(trim((string) $c['full_name']), 0, 1)) ?: '?';
     $preview = mb_strimwidth(preg_replace('/\s+/u', ' ', (string) $c['message']), 0, 180, '…'); ?>
-    <a class="adm-contact<?= !$isReplied ? ' is-new' : '' ?>" href="<?= e(url('admin/contacts/' . (int) $c['id'])) ?>">
+    <a class="adm-contact<?= !$isReplied ? ' is-new' : '' ?>" href="<?= e(url('admin/contacts/' . (int) $c['id']) . $querySuffix) ?>">
         <span class="adm-avatar" aria-hidden="true"><?= e($initial) ?></span>
         <div class="adm-contact__main">
             <div class="adm-contact__top">

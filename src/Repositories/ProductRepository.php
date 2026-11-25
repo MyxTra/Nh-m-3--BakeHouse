@@ -51,8 +51,9 @@ final class ProductRepository extends BaseRepository
         $newSince = strtotime('-30 days');
         foreach ($rows as &$row) {
             $row['is_new'] = strtotime((string) $row['created_at']) >= $newSince;
-            $row['is_best'] = (int) ($row['sold'] ?? 0) >= 2;
+            $row['is_best'] = (int) ($row['sold'] ?? 0) >= 5;
         }
+        unset($row);
 
         return $rows;
     }

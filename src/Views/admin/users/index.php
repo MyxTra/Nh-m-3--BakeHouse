@@ -1,5 +1,15 @@
 <?php /** @var array $rows */ /** @var \App\Core\Paginator $paginator */ /** @var string $search */ /** @var string $role */ /** @var string $active */
 $selfId = \App\Core\Auth::id();
+$currentPage = isset($_GET['page']) && ctype_digit((string) $_GET['page']) && (int) $_GET['page'] > 1
+    ? (int) $_GET['page']
+    : 1;
+$filterQuery = array_filter([
+    'q' => $search !== '' ? $search : null,
+    'role' => $role !== '' ? $role : null,
+    'active' => $active !== '' ? $active : null,
+    'page' => $currentPage > 1 ? $currentPage : null,
+], static fn (mixed $v): bool => $v !== null);
+$querySuffix = $filterQuery !== [] ? '?' . http_build_query($filterQuery) : '';
 partial('admin-filter', [
     'search' => $search, 'placeholder' => 'Tìm theo email, SĐT, họ tên…',
     'selects' => [
@@ -16,7 +26,7 @@ partial('admin-filter', [
             $isAdmin = ($u['role'] ?? '') === 'admin';
             $isActive = (int) ($u['is_active'] ?? 0) === 1;
             $isSelf = $selfId !== null && (int) $selfId === $userId;
-            $detailUrl = url('admin/users/' . $userId); ?>
+            $detailUrl = url('admin/users/' . $userId) . $querySuffix; ?>
             <tr>
                 <td class="adm-main" data-label="#"><?= $userId ?></td>
                 <td data-label="Họ tên"><?= e($u['full_name'] !== null && $u['full_name'] !== '' ? $u['full_name'] : '—') ?></td>
@@ -28,6 +38,10 @@ partial('admin-filter', [
                     <a class="bh-btn bh-btn--outline bh-btn--sm adm-icon" href="<?= e($detailUrl) ?>" title="Xem" aria-label="Xem"><i class="bi bi-eye"></i></a>
                     <?php if (!$isSelf) : ?>
                         <form class="d-inline" method="post" action="<?= e(url('admin/users/' . $userId . '/toggle-active')) ?>" data-confirm="<?= $isActive ? 'Khóa tài khoản này?' : 'Mở khóa tài khoản này?' ?>"><?= csrf_field() ?>
+                            <?php if ($search !== '') : ?><input type="hidden" name="q" value="<?= e($search) ?>"><?php endif; ?>
+                            <?php if ($role !== '') : ?><input type="hidden" name="role" value="<?= e($role) ?>"><?php endif; ?>
+                            <?php if ($active !== '') : ?><input type="hidden" name="active" value="<?= e($active) ?>"><?php endif; ?>
+                            <?php if ($currentPage > 1) : ?><input type="hidden" name="page" value="<?= (int) $currentPage ?>"><?php endif; ?>
                             <button class="bh-btn bh-btn--dark bh-btn--sm" type="submit"><?= $isActive ? 'Khóa' : 'Mở khóa' ?></button>
                         </form>
                     <?php endif; ?>
