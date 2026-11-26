@@ -1,8 +1,11 @@
 <?php
 
+
 declare(strict_types=1);
 
+
 namespace App\Services;
+
 
 use App\Core\Env;
 use App\Core\StreamAborted;
@@ -10,6 +13,7 @@ use App\Services\Chatbot\ChatbotTools;
 use App\Services\Chatbot\GroqClient;
 use App\Services\Chatbot\ProductEmbeddingIndexer;
 use Throwable;
+
 
 final class ChatbotService
 {
@@ -24,9 +28,14 @@ final class ChatbotService
         '/products',
     ];
 
+
     private const SYSTEM_PROMPT = <<<'PROMPT'
-Bạn là trợ lý chuyên gia làm bánh thân thiện của BakeHouse.
+Bạn là trợ lý chuyên gia làm bánh thân thiện của BakeHouse, CHỈ hỗ trợ các chủ đề liên quan đến cửa hàng BakeHouse: nguyên liệu/dụng cụ làm bánh, sản phẩm, đơn hàng, chính sách giao hàng/thanh toán, thông tin liên hệ cửa hàng.
 Quy tắc bắt buộc:
+0. Nếu khách hỏi điều gì đó hoàn toàn không liên quan đến làm bánh / BakeHouse (vd: tình cảm, tâm sự cá nhân, chính trị, kiến thức chung không liên quan...), từ chối lịch sự và mời họ quay lại hỏi về bánh/nguyên liệu/dụng cụ/đơn hàng của BakeHouse. KHÔNG đưa lời khuyên về chủ đề ngoài lề đó.
+0b. Nếu khách hỏi thông tin cửa hàng (địa chỉ, hotline, email, giờ mở cửa, phí ship, thanh toán): BẮT BUỘC gọi `get_shop_policies` rồi trả lời thẳng bằng dữ liệu thật nhận được (địa chỉ, số điện thoại, email, giờ mở cửa...), KHÔNG chỉ dẫn vòng vo sang `/contact` nếu tool đã trả về đủ thông tin.
+0c. Nếu khách hỏi ngày/giờ/thứ trùng với các mốc (hôm nay, ngày mai, ngày kia, 3 ngày nữa) đã liệt kê sẵn ở cuối system prompt: lấy đúng mốc đó, KHÔNG tự cộng trừ lại.
+0d. Nếu khách hỏi điều cần suy luận/tính toán mà BẠN KHÔNG có dữ kiện chắc chắn (vd: ngày xa hơn các mốc đã cho, phép tính, đố vui, kiến thức chung ngoài phạm vi bánh/BakeHouse): thẳng thắn nói bạn không chắc chắn về việc này và mời khách hỏi về bánh/nguyên liệu/dụng cụ/đơn hàng/chính sách của BakeHouse. KHÔNG đoán hoặc tự suy luận ra câu trả lời có thể sai.
 1. Gợi ý / so sánh nguyên liệu / dụng cụ / món bánh:
   - LUÔN gọi `search_bakery_products` trước để lấy sản phẩm thật trong kho. Đưa đề xuất ngay ở lượt đầu, trả lời trọng tâm, không hỏi ngược vòng vo.
   - CHỈ dùng tên, đơn vị và giá có trong kết quả tool; KHÔNG tự bịa sản phẩm hoặc giá. Nếu không có hàng phù hợp, báo là hiện chưa có hàng và hướng dẫn `[Form Liên hệ BakeHouse](/contact)`.
@@ -46,14 +55,17 @@ Quy tắc bắt buộc:
 5. CSKH / khiếu nại: hướng dẫn `[Form Liên hệ BakeHouse](/contact)`.
 PROMPT;
 
+
     private GroqClient $client;
     private ChatbotTools $tools;
+
 
     public function __construct(?GroqClient $client = null, ?ChatbotTools $tools = null)
     {
         $this->client = $client ?? new GroqClient();
         $this->tools = $tools ?? new ChatbotTools(new ProductEmbeddingIndexer($this->client));
     }
+
 
     /**
      * @param array<int, array{role: string, content?: string, text?: string}> $history
@@ -70,6 +82,7 @@ PROMPT;
             ];
         }
 
+
         $normalizedHistory = [];
         foreach (array_slice($history, -6) as $turn) {
             if (!is_array($turn)) {
@@ -84,6 +97,7 @@ PROMPT;
             }
         }
 
+
         if ($normalizedHistory === []) {
             return [
                 'message' => 'Bạn hãy nhập câu hỏi hoặc món bánh muốn làm để mình hỗ trợ nhé!',
@@ -91,6 +105,7 @@ PROMPT;
                 'total' => 0,
             ];
         }
+
 
         $lastUserText = '';
         for ($i = count($normalizedHistory) - 1; $i >= 0; $i--) {
@@ -101,20 +116,24 @@ PROMPT;
         }
         $userBudget = $this->budgetFromUser($lastUserText);
 
+
         $messages = array_merge(
-            [['role' => 'system', 'content' => self::SYSTEM_PROMPT]],
+            [['role' => 'system', 'content' => self::SYSTEM_PROMPT . "\n\n" . $this->currentDateContext()]],
             $normalizedHistory
         );
         $groqTools = $this->buildGroqTools($this->tools->declarations());
+
 
         $finalProducts = [];
         $finalTotal = 0;
         $discoveredProductIds = [];
         $budgetRetried = false;
 
+
         try {
             for ($step = 0; $step < self::MAX_STEPS; $step++) {
                 $stepTools = ($step === self::MAX_STEPS - 1) ? [] : $groqTools;
+
 
                 try {
                     $response = $this->client->chatCompletions($messages, $stepTools, 0.4, 1500);
@@ -130,6 +149,7 @@ PROMPT;
                         }
                         $this->emitText($replyText, $emit);
 
+
                         return [
                             'message' => $replyText,
                             'products' => [],
@@ -139,17 +159,21 @@ PROMPT;
                     throw $stepErr;
                 }
 
+
                 $choiceMessage = $response['choices'][0]['message'] ?? null;
                 if (!is_array($choiceMessage)) {
                     break;
                 }
 
+
                 $toolCalls = is_array($choiceMessage['tool_calls'] ?? null)
                     ? $choiceMessage['tool_calls']
                     : [];
 
+
                 if ($toolCalls === []) {
                     $rawReply = trim((string) ($choiceMessage['content'] ?? ''));
+
 
                     if ($finalProducts === [] && $rawReply !== '') {
                         $extracted = $this->rescueBundleFromText($rawReply);
@@ -158,6 +182,7 @@ PROMPT;
                             $finalTotal = $extracted['total'];
                         }
                     }
+
 
                     if ($finalProducts === [] && $discoveredProductIds !== [] && $this->shouldAttachBundle($lastUserText, $rawReply)) {
                         $autoBundle = $this->tools->execute('finalize_product_bundle', [
@@ -168,6 +193,7 @@ PROMPT;
                             $finalTotal = (int) ($autoBundle['total'] ?? 0);
                         }
                     }
+
 
                     if (!$budgetRetried && $userBudget > 0 && $finalTotal > $userBudget) {
                         $budgetRetried = true;
@@ -186,12 +212,14 @@ PROMPT;
                         continue;
                     }
 
+
                     $replyText = $this->sanitizeReplyText($rawReply, $finalProducts !== []);
                     if ($replyText === '') {
                         $replyText = $finalProducts !== []
                             ? 'Mình đã gợi ý các sản phẩm phù hợp bên dưới để bạn dễ chọn và thêm vào giỏ nhé:'
                             : 'Mình đã giải đáp thông tin cho bạn, bạn cần hỗ trợ thêm món hay nguyên liệu nào không?';
                     }
+
 
                     if ($userBudget > 0 && $finalTotal > $userBudget) {
                         $replyText .= sprintf(
@@ -201,7 +229,9 @@ PROMPT;
                         );
                     }
 
+
                     $this->emitText($replyText, $emit);
+
 
                     return [
                         'message' => $replyText,
@@ -210,11 +240,13 @@ PROMPT;
                     ];
                 }
 
+
                 $messages[] = [
                     'role' => 'assistant',
                     'content' => $choiceMessage['content'] ?? null,
                     'tool_calls' => $toolCalls,
                 ];
+
 
                 foreach ($toolCalls as $toolCall) {
                     $callId = (string) ($toolCall['id'] ?? '');
@@ -224,11 +256,14 @@ PROMPT;
                         $emit('status', ['text' => $this->statusForTool($fnName)]);
                     }
 
+
                     $rawArgs = $toolCall['function']['arguments'] ?? '{}';
                     $decodedArgs = is_string($rawArgs) ? json_decode($rawArgs, true) : (array) $rawArgs;
                     $fnArgs = is_array($decodedArgs) ? $decodedArgs : [];
 
+
                     $toolOutput = $this->tools->execute($fnName, $fnArgs);
+
 
                     if ($fnName === 'search_bakery_products' && isset($toolOutput['products']) && is_array($toolOutput['products'])) {
                         foreach ($toolOutput['products'] as $p) {
@@ -238,12 +273,15 @@ PROMPT;
                         }
                     }
 
+
                     if ($fnName === 'finalize_product_bundle') {
                         $finalProducts = is_array($toolOutput['products'] ?? null) ? $toolOutput['products'] : [];
                         $finalTotal = (int) ($toolOutput['total'] ?? 0);
                     }
 
+
                     $compactOutput = $this->compactToolOutputForModel($fnName, $toolOutput);
+
 
                     $messages[] = [
                         'role' => 'tool',
@@ -252,6 +290,7 @@ PROMPT;
                     ];
                 }
             }
+
 
             if ($finalProducts === [] && $discoveredProductIds !== []) {
                 $autoBundle = $this->tools->execute('finalize_product_bundle', [
@@ -263,10 +302,12 @@ PROMPT;
                 }
             }
 
+
             $fallbackMsg = $finalProducts !== []
                 ? 'Mình đã tổng hợp các sản phẩm có sẵn trong kho bên dưới để bạn tham khảo và thêm vào giỏ nhé:'
                 : 'Bạn cần mình gợi ý nguyên liệu cho món bánh nào thì nhắn thêm nhé!';
             $this->emitText($fallbackMsg, $emit);
+
 
             return [
                 'message' => $fallbackMsg,
@@ -276,8 +317,9 @@ PROMPT;
         } catch (StreamAborted $e) {
             throw $e;
         } catch (Throwable $e) {
-            error_log('[BakeHouse Groq Chat Error] ' . $e->getMessage());
+            @file_put_contents(dirname(__DIR__, 2) . '/storage/logs/app.log', '[' . date('Y-m-d H:i:s') . '] [BakeHouse Groq Chat Error] ' . $e->getMessage() . "\n", FILE_APPEND);
             $this->emitText(self::FALLBACK, $emit);
+
 
             return [
                 'message' => self::FALLBACK,
@@ -287,11 +329,40 @@ PROMPT;
         }
     }
 
+
+    private function currentDateContext(): string
+    {
+        $weekdays = [
+            'Sunday' => 'Chủ Nhật',
+            'Monday' => 'Thứ Hai',
+            'Tuesday' => 'Thứ Ba',
+            'Wednesday' => 'Thứ Tư',
+            'Thursday' => 'Thứ Năm',
+            'Friday' => 'Thứ Sáu',
+            'Saturday' => 'Thứ Bảy',
+        ];
+
+
+        $now = new \DateTimeImmutable('now');
+        $labelFor = static fn (\DateTimeImmutable $d): string => ($weekdays[$d->format('l')] ?? $d->format('l')) . ', ngày ' . $d->format('d/m/Y');
+
+
+        return sprintf(
+            "NGÀY HIỆN TẠI (dùng đúng các mốc sau, KHÔNG tự tính lại):\n- Hôm nay: %s\n- Ngày mai: %s\n- Ngày kia: %s\n- 3 ngày nữa: %s",
+            $labelFor($now),
+            $labelFor($now->modify('+1 day')),
+            $labelFor($now->modify('+2 days')),
+            $labelFor($now->modify('+3 days'))
+        );
+    }
+
+
     private function shouldAttachBundle(string $userText, string $replyText): bool
     {
         $combined = $userText . ' ' . $replyText;
         return (bool) preg_match('/(?:hay|so sánh|ngon hơn|tốt hơn|chọn loại|mua|làm bánh|nguyên liệu|dụng cụ|bao nhiêu|giá)/iu', $combined);
     }
+
 
     private function emitText(string $text, ?callable $emit): void
     {
@@ -299,6 +370,7 @@ PROMPT;
             $emit('delta', ['text' => $text]);
         }
     }
+
 
     private function statusForTool(string $fnName): string
     {
@@ -311,6 +383,7 @@ PROMPT;
         };
     }
 
+
     private function budgetFromUser(string $text): int
     {
         if (!preg_match('/(?:dưới|ngân sách|tối đa|không quá|budget)\D{0,12}?(\d+(?:[.,]\d+)*)[ \t]*(k|nghìn|ngàn|tr|triệu|m)?\b/iu', $text, $m)) {
@@ -318,6 +391,7 @@ PROMPT;
         }
         $unit = mb_strtolower($m[2] ?? '', 'UTF-8');
         $number = $m[1];
+
 
         if (in_array($unit, ['tr', 'triệu', 'm'], true)) {
             return (int) round((float) str_replace(',', '.', $number) * 1_000_000);
@@ -327,8 +401,10 @@ PROMPT;
             return $value * 1000;
         }
 
+
         return $value;
     }
+
 
     /**
      * @param array<string, mixed> $output
@@ -350,12 +426,14 @@ PROMPT;
                 ];
             }
 
+
             return [
                 'count' => count($items),
                 'total' => $output['total'] ?? 0,
                 'products' => $items,
             ];
         }
+
 
         if (isset($output['products']) && is_array($output['products'])) {
             $compactProducts = [];
@@ -377,14 +455,18 @@ PROMPT;
                 $compactProducts[] = $row;
             }
 
+
             $copy = $output;
             $copy['products'] = $compactProducts;
+
 
             return $copy;
         }
 
+
         return $output;
     }
+
 
     /**
      * @return array{products: array<int, array<string, mixed>>, total: int}
@@ -394,6 +476,7 @@ PROMPT;
         if (!preg_match_all('/\{[^{}]*(?:product_ids|items)[^{}]*\}/s', $text, $matches)) {
             return ['products' => [], 'total' => 0];
         }
+
 
         foreach ($matches[0] as $jsonSnippet) {
             $decoded = json_decode($jsonSnippet, true);
@@ -411,8 +494,10 @@ PROMPT;
             }
         }
 
+
         return ['products' => [], 'total' => 0];
     }
+
 
     private function isAllowedUrl(string $href): bool
     {
@@ -432,14 +517,17 @@ PROMPT;
             }
         }
 
+
         return false;
     }
+
 
     private function sanitizeReplyText(string $text, bool $hasProducts): string
     {
         if ($text === '') {
             return '';
         }
+
 
         $cleaned = preg_replace('/```(?:json)?\s*[\s\S]*?```/i', '', $text) ?? $text;
         $cleaned = preg_replace('/\{\s*"(?:product_ids|items)"\s*:[\s\S]*?\}/', '', $cleaned) ?? $cleaned;
@@ -448,22 +536,28 @@ PROMPT;
         $cleaned = preg_replace('/\(?[^()\n]*thẻ sản phẩm sẽ hiển thị[^()\n]*\)?[.!?]?/iu', '', $cleaned) ?? $cleaned;
         $cleaned = preg_replace('/\(?[^()\n]*bộ chọn số lượng và nút[^()\n]*\)?[.!?]?/iu', '', $cleaned) ?? $cleaned;
 
+
         // Gỡ link hoặc câu dẫn sang trang Thanh toán / checkout khi gợi ý sản phẩm
         $cleaned = preg_replace('/\[([^\]]+)\]\(\/checkout[^)]*\)/iu', '$1', $cleaned) ?? $cleaned;
         $cleaned = preg_replace('/[^.!?\n]*(?:chuyển tới|đi tới|đến)\s+thanh toán[^.!?\n]*[.!?]?/iu', '', $cleaned) ?? $cleaned;
+
 
         $cleaned = preg_replace_callback('/\[([^\]\n]+)\]\(([^)\s]+)\)/', function (array $m): string {
             return $this->isAllowedUrl($m[2]) ? $m[0] : $m[1];
         }, $cleaned) ?? $cleaned;
 
+
         if (!$hasProducts) {
             $cleaned = preg_replace('/[^.!?\n]*(?:thẻ sản phẩm|thêm vào giỏ)[^.!?\n]*[.!?]?/iu', '', $cleaned) ?? $cleaned;
         }
 
+
         $cleaned = preg_replace('/\n{3,}/', "\n\n", $cleaned) ?? $cleaned;
+
 
         return trim($cleaned);
     }
+
 
     /**
      * @param array<int, mixed> $declarations
@@ -487,8 +581,10 @@ PROMPT;
             ];
         }
 
+
         return $groqTools;
     }
+
 
     private function normalizeJsonSchema(mixed $schema): mixed
     {
@@ -496,9 +592,11 @@ PROMPT;
             return $schema;
         }
 
+
         if (isset($schema['type']) && is_string($schema['type'])) {
             $schema['type'] = strtolower($schema['type']);
         }
+
 
         if (isset($schema['properties']) && is_array($schema['properties'])) {
             foreach ($schema['properties'] as $propKey => $propVal) {
@@ -506,9 +604,11 @@ PROMPT;
             }
         }
 
+
         if (isset($schema['items'])) {
             $schema['items'] = $this->normalizeJsonSchema($schema['items']);
         }
+
 
         return $schema;
     }
