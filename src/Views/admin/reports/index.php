@@ -59,7 +59,9 @@ $returnQuery = 'return_url=' . urlencode($currentReportUrl);
         <?php endforeach; ?>
         <?php if ($rows === []) : ?><tr><td colspan="7" style="text-align:center">Không có đơn hoàn tất phù hợp.</td></tr><?php endif; ?>
         </tbody>
-        <tfoot><tr><td colspan="6">TỔNG CỘNG</td><td><?= e(format_vnd((int) ($summary['revenue'] ?? 0))) ?></td></tr></tfoot>
+        <tbody style="break-inside: avoid; page-break-inside: avoid;">
+            <tr><td colspan="6"><strong>TỔNG CỘNG</strong></td><td><strong><?= e(format_vnd((int) ($summary['revenue'] ?? 0))) ?></strong></td></tr>
+        </tbody>
     </table>
     <div class="adm-print-doc__sign">
         <div>Ngày ….. tháng ….. năm …..</div>
