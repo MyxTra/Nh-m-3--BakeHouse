@@ -1,5 +1,7 @@
 <?php /** @var array $rows */ /** @var \App\Core\Paginator $paginator */ /** @var string $search */ /** @var string $role */ /** @var string $active */
 $selfId = \App\Core\Auth::id();
+$rootAdminId = 1;
+$actorIsRoot = $selfId !== null && (int) $selfId === $rootAdminId;
 $currentPage = isset($_GET['page']) && ctype_digit((string) $_GET['page']) && (int) $_GET['page'] > 1
     ? (int) $_GET['page']
     : 1;
@@ -26,6 +28,8 @@ partial('admin-filter', [
             $isAdmin = ($u['role'] ?? '') === 'admin';
             $isActive = (int) ($u['is_active'] ?? 0) === 1;
             $isSelf = $selfId !== null && (int) $selfId === $userId;
+            $isRootTarget = $userId === $rootAdminId;
+            $canToggleActive = !$isSelf && !$isRootTarget && ($actorIsRoot || !$isAdmin);
             $detailUrl = url('admin/users/' . $userId) . $querySuffix; ?>
             <tr>
                 <td class="adm-main" data-label="#"><?= $userId ?></td>
@@ -36,7 +40,7 @@ partial('admin-filter', [
                 <td data-label="Ngày tạo"><?= e(date('d/m/Y', strtotime((string) $u['created_at']))) ?></td>
                 <td class="adm-actions-cell">
                     <a class="bh-btn bh-btn--outline bh-btn--sm adm-icon" href="<?= e($detailUrl) ?>" title="Xem" aria-label="Xem"><i class="bi bi-eye"></i></a>
-                    <?php if (!$isSelf) : ?>
+                    <?php if ($canToggleActive) : ?>
                         <form class="d-inline" method="post" action="<?= e(url('admin/users/' . $userId . '/toggle-active')) ?>" data-confirm="<?= $isActive ? 'Khóa tài khoản này?' : 'Mở khóa tài khoản này?' ?>"><?= csrf_field() ?>
                             <?php if ($search !== '') : ?><input type="hidden" name="q" value="<?= e($search) ?>"><?php endif; ?>
                             <?php if ($role !== '') : ?><input type="hidden" name="role" value="<?= e($role) ?>"><?php endif; ?>

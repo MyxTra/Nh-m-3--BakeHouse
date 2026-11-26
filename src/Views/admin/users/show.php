@@ -1,7 +1,8 @@
-<?php /** @var array $user */ /** @var array{orders:int, spent:int, reviews:int} $activity */ /** @var bool $isSelf */
+<?php /** @var array $user */ /** @var array{orders:int, spent:int, reviews:int} $activity */ /** @var bool $isSelf */ /** @var bool $canChangeRole */ /** @var bool $canToggleActive */
 $isAdmin = ($user['role'] ?? '') === 'admin';
 $isActive = (int) ($user['is_active'] ?? 0) === 1;
 $id = (int) $user['id'];
+$canManage = ($canChangeRole ?? !$isSelf) || ($canToggleActive ?? !$isSelf);
 
 $backQ = isset($_GET['q']) ? trim((string) $_GET['q']) : '';
 $backRole = isset($_GET['role']) && in_array($_GET['role'], ['user', 'admin'], true) ? (string) $_GET['role'] : '';
@@ -41,26 +42,30 @@ $backUrl = url('admin/users') . ($backParams !== [] ? '?' . http_build_query($ba
     <?php if (!$isSelf) : ?>
     <aside class="adm-card">
         <h2 class="adm-contact-detail__title mb-3">Quản lý tài khoản</h2>
-        <form method="post" action="<?= e(url('admin/users/' . $id . '/role')) ?>" class="d-flex gap-2 mb-3">
-            <?= csrf_field() ?>
-            <?php if ($backQ !== '') : ?><input type="hidden" name="q" value="<?= e($backQ) ?>"><?php endif; ?>
-            <?php if ($backRole !== '') : ?><input type="hidden" name="role" value="<?= e($backRole) ?>"><?php endif; ?>
-            <?php if ($backActive !== '') : ?><input type="hidden" name="active" value="<?= e($backActive) ?>"><?php endif; ?>
-            <?php if ($backPage > 1) : ?><input type="hidden" name="page" value="<?= (int) $backPage ?>"><?php endif; ?>
-            <select class="form-select" name="role" aria-label="Vai trò">
-                <option value="user"<?= !$isAdmin ? ' selected' : '' ?>>Người dùng</option>
-                <option value="admin"<?= $isAdmin ? ' selected' : '' ?>>Quản trị viên</option>
-            </select>
-            <button class="bh-btn bh-btn--primary text-nowrap" type="submit">Đổi vai trò</button>
-        </form>
-        <form method="post" action="<?= e(url('admin/users/' . $id . '/toggle-active')) ?>" data-confirm="<?= $isActive ? 'Vô hiệu hóa tài khoản này?' : 'Mở khóa tài khoản này?' ?>">
-            <?= csrf_field() ?>
-            <?php if ($backQ !== '') : ?><input type="hidden" name="q" value="<?= e($backQ) ?>"><?php endif; ?>
-            <?php if ($backRole !== '') : ?><input type="hidden" name="role" value="<?= e($backRole) ?>"><?php endif; ?>
-            <?php if ($backActive !== '') : ?><input type="hidden" name="active" value="<?= e($backActive) ?>"><?php endif; ?>
-            <?php if ($backPage > 1) : ?><input type="hidden" name="page" value="<?= (int) $backPage ?>"><?php endif; ?>
-            <button class="bh-btn bh-btn--dark w-100 mb-3" type="submit"><?= $isActive ? 'Vô hiệu hóa tài khoản' : 'Mở khóa tài khoản' ?></button>
-        </form>
+        <?php if ($canManage) : ?>
+            <form method="post" action="<?= e(url('admin/users/' . $id . '/role')) ?>" class="d-flex gap-2 mb-3" data-confirm="Xác nhận thay đổi vai trò của tài khoản này?">
+                <?= csrf_field() ?>
+                <?php if ($backQ !== '') : ?><input type="hidden" name="q" value="<?= e($backQ) ?>"><?php endif; ?>
+                <?php if ($backRole !== '') : ?><input type="hidden" name="role" value="<?= e($backRole) ?>"><?php endif; ?>
+                <?php if ($backActive !== '') : ?><input type="hidden" name="active" value="<?= e($backActive) ?>"><?php endif; ?>
+                <?php if ($backPage > 1) : ?><input type="hidden" name="page" value="<?= (int) $backPage ?>"><?php endif; ?>
+                <select class="form-select" name="role" aria-label="Vai trò">
+                    <option value="user"<?= !$isAdmin ? ' selected' : '' ?>>Người dùng</option>
+                    <option value="admin"<?= $isAdmin ? ' selected' : '' ?>>Quản trị viên</option>
+                </select>
+                <button class="bh-btn bh-btn--primary text-nowrap" type="submit">Đổi vai trò</button>
+            </form>
+            <form method="post" action="<?= e(url('admin/users/' . $id . '/toggle-active')) ?>" data-confirm="<?= $isActive ? 'Vô hiệu hóa tài khoản này?' : 'Mở khóa tài khoản này?' ?>">
+                <?= csrf_field() ?>
+                <?php if ($backQ !== '') : ?><input type="hidden" name="q" value="<?= e($backQ) ?>"><?php endif; ?>
+                <?php if ($backRole !== '') : ?><input type="hidden" name="role" value="<?= e($backRole) ?>"><?php endif; ?>
+                <?php if ($backActive !== '') : ?><input type="hidden" name="active" value="<?= e($backActive) ?>"><?php endif; ?>
+                <?php if ($backPage > 1) : ?><input type="hidden" name="page" value="<?= (int) $backPage ?>"><?php endif; ?>
+                <button class="bh-btn bh-btn--dark w-100 mb-3" type="submit"><?= $isActive ? 'Vô hiệu hóa tài khoản' : 'Mở khóa tài khoản' ?></button>
+            </form>
+        <?php else : ?>
+            <p class="bh-muted small mb-3">Bạn không có quyền thay đổi vai trò hoặc trạng thái của tài khoản quản trị viên này.</p>
+        <?php endif; ?>
         <a class="bh-btn bh-btn--outline" href="<?= e($backUrl) ?>">Quay lại</a>
     </aside>
     <?php endif; ?>

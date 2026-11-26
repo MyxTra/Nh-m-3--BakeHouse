@@ -15,6 +15,8 @@ use App\Repositories\UserRepository;
 /** Quản lý người dùng: xem danh sách, đổi vai trò, khóa/mở tài khoản. */
 final class UserController extends BaseController
 {
+    private const ROOT_ADMIN_ID = 1;
+
     public function __construct(private readonly UserRepository $users = new UserRepository())
     {
     }
@@ -43,11 +45,20 @@ final class UserController extends BaseController
             return ErrorHandler::render(404, $request);
         }
 
+        $actorId = Auth::id();
+        $targetId = (int) $id;
+        $isSelf = $actorId === $targetId;
+        $isRootTarget = $targetId === self::ROOT_ADMIN_ID;
+        $actorIsRoot = $actorId === self::ROOT_ADMIN_ID;
+        $targetIsAdmin = (string) ($user['role'] ?? 'user') === 'admin';
+
         return $this->render('admin.users.show', [
             'title' => 'Chi tiết người dùng',
             'user' => $user,
-            'activity' => $this->users->activitySummary((int) $id),
-            'isSelf' => Auth::id() === (int) $id,
+            'activity' => $this->users->activitySummary($targetId),
+            'isSelf' => $isSelf,
+            'canChangeRole' => !$isSelf && !$isRootTarget && ($actorIsRoot || !$targetIsAdmin),
+            'canToggleActive' => !$isSelf && !$isRootTarget && ($actorIsRoot || !$targetIsAdmin),
         ], 'layouts.admin');
     }
 
@@ -58,10 +69,25 @@ final class UserController extends BaseController
             return ErrorHandler::render(404, $request);
         }
 
-        $target = '/admin/users/' . (int) $id . $this->filterQuerySuffix($request);
+        $targetId = (int) $id;
+        $actorId = Auth::id();
+        $target = '/admin/users/' . $targetId . $this->filterQuerySuffix($request);
 
-        if (Auth::id() === (int) $id) {
+        if ($actorId === $targetId) {
             $this->flash('danger', 'Không thể tự đổi vai trò của chính mình.');
+
+            return $this->redirect($target);
+        }
+
+        if ($targetId === self::ROOT_ADMIN_ID) {
+            $this->flash('danger', 'Không thể thay đổi vai trò của quản trị viên gốc.');
+
+            return $this->redirect($target);
+        }
+
+        $currentRole = (string) ($user['role'] ?? 'user');
+        if ($actorId !== self::ROOT_ADMIN_ID && $currentRole === 'admin') {
+            $this->flash('danger', 'Chỉ quản trị viên gốc mới có quyền thay đổi vai trò của quản trị viên khác.');
 
             return $this->redirect($target);
         }
@@ -73,7 +99,7 @@ final class UserController extends BaseController
             return $this->redirect($target);
         }
 
-        $this->users->setRole((int) $id, $role);
+        $this->users->setRole($targetId, $role);
         $this->flash('success', 'Đã cập nhật vai trò.');
 
         return $this->redirect($target);
@@ -86,16 +112,31 @@ final class UserController extends BaseController
             return ErrorHandler::render(404, $request);
         }
 
-        $target = '/admin/users/' . (int) $id . $this->filterQuerySuffix($request);
+        $targetId = (int) $id;
+        $actorId = Auth::id();
+        $target = '/admin/users/' . $targetId . $this->filterQuerySuffix($request);
 
-        if (Auth::id() === (int) $id) {
+        if ($actorId === $targetId) {
             $this->flash('danger', 'Không thể tự khóa tài khoản của chính mình.');
 
             return $this->redirect($target);
         }
 
+        if ($targetId === self::ROOT_ADMIN_ID) {
+            $this->flash('danger', 'Không thể khóa tài khoản của quản trị viên gốc.');
+
+            return $this->redirect($target);
+        }
+
+        $currentRole = (string) ($user['role'] ?? 'user');
+        if ($actorId !== self::ROOT_ADMIN_ID && $currentRole === 'admin') {
+            $this->flash('danger', 'Chỉ quản trị viên gốc mới có quyền khóa/mở khóa tài khoản quản trị viên khác.');
+
+            return $this->redirect($target);
+        }
+
         $nextActive = !((int) $user['is_active'] === 1);
-        $this->users->setActive((int) $id, $nextActive);
+        $this->users->setActive($targetId, $nextActive);
         $this->flash('success', $nextActive ? 'Đã mở khóa tài khoản.' : 'Đã khóa tài khoản.');
 
         return $this->redirect($target);
