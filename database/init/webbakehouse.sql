@@ -3,12 +3,9 @@
 -- https://www.phpmyadmin.net/
 --
 -- Máy chủ: 127.0.0.1
--- Thời gian đã tạo: Th10 23, 2026 lúc 08:56 AM
+-- Thời gian đã tạo: Th10 26, 2026 lúc 12:09 PM
 -- Phiên bản máy phục vụ: 10.4.32-MariaDB
 -- Phiên bản PHP: 8.2.12
-
-CREATE DATABASE IF NOT EXISTS webbakehouse CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;
-USE webbakehouse;
 
 SET SQL_MODE = "NO_AUTO_VALUE_ON_ZERO";
 START TRANSACTION;
@@ -80,7 +77,9 @@ INSERT INTO `brands` (`id`, `name`, `slug`, `created_at`, `updated_at`) VALUES
 (10, 'Callebaut', 'callebaut', '2026-11-22 18:00:40', '2026-11-22 18:00:40'),
 (11, 'Mauri', 'mauri', '2026-11-22 18:00:40', '2026-11-22 18:00:40'),
 (12, 'Philadelphia', 'philadelphia', '2026-11-22 18:00:40', '2026-11-22 18:00:40'),
-(13, 'Président', 'president', '2026-11-22 18:00:40', '2026-11-22 18:00:40');
+(13, 'Président', 'president', '2026-11-22 18:00:40', '2026-11-22 18:00:40'),
+(14, 'Agar', 'agar', '2026-11-26 06:54:25', '2026-11-26 06:54:34'),
+(15, 'Ewald', 'ewald', '2026-11-26 06:55:51', '2026-11-26 06:55:51');
 
 -- --------------------------------------------------------
 
@@ -100,7 +99,6 @@ CREATE TABLE `carts` (
 --
 
 INSERT INTO `carts` (`id`, `user_id`, `created_at`, `updated_at`) VALUES
-(1, 1, '2026-11-22 18:00:40', '2026-11-22 18:00:40'),
 (2, 2, '2026-11-22 18:00:40', '2026-11-22 18:00:40'),
 (3, 3, '2026-11-22 18:00:40', '2026-11-22 18:00:40'),
 (4, 4, '2026-11-22 18:00:40', '2026-11-22 18:00:40'),
@@ -112,7 +110,8 @@ INSERT INTO `carts` (`id`, `user_id`, `created_at`, `updated_at`) VALUES
 (10, 10, '2026-11-22 18:00:40', '2026-11-22 18:00:40'),
 (11, 11, '2026-11-22 18:00:40', '2026-11-22 18:00:40'),
 (12, 12, '2026-11-22 18:00:40', '2026-11-22 18:00:40'),
-(13, 13, '2026-11-22 18:38:34', '2026-11-22 18:38:34');
+(13, 13, '2026-11-22 18:38:34', '2026-11-22 18:38:34'),
+(14, 1, '2026-11-26 08:54:58', '2026-11-26 08:54:58');
 
 -- --------------------------------------------------------
 
@@ -134,9 +133,6 @@ CREATE TABLE `cart_items` (
 --
 
 INSERT INTO `cart_items` (`id`, `cart_id`, `product_id`, `quantity`, `created_at`, `updated_at`) VALUES
-(1, 3, 1, 2, '2026-11-22 18:00:40', '2026-11-22 18:00:40'),
-(2, 3, 19, 1, '2026-11-22 18:00:40', '2026-11-22 18:00:40'),
-(3, 3, 28, 1, '2026-11-22 18:00:40', '2026-11-22 18:00:40'),
 (4, 2, 47, 1, '2026-11-22 18:00:40', '2026-11-22 18:00:40'),
 (5, 2, 50, 2, '2026-11-22 18:00:40', '2026-11-22 18:00:40'),
 (6, 6, 63, 1, '2026-11-22 18:00:40', '2026-11-22 18:00:40'),
@@ -145,16 +141,7 @@ INSERT INTO `cart_items` (`id`, `cart_id`, `product_id`, `quantity`, `created_at
 (9, 9, 40, 1, '2026-11-22 18:00:40', '2026-11-22 18:00:40'),
 (10, 9, 54, 1, '2026-11-22 18:00:40', '2026-11-22 18:00:40'),
 (19, 13, 50, 1, '2026-11-22 19:58:26', '2026-11-22 19:58:36'),
-(23, 13, 53, 3, '2026-11-22 20:00:38', '2026-11-22 20:00:38'),
-(24, 1, 5, 6, '2026-11-22 20:56:15', '2026-11-22 21:14:40'),
-(25, 1, 53, 6, '2026-11-22 20:56:17', '2026-11-22 21:20:54'),
-(26, 1, 12, 7, '2026-11-22 20:56:17', '2026-11-22 21:20:54'),
-(27, 1, 60, 2, '2026-11-22 20:56:17', '2026-11-22 21:14:40'),
-(36, 1, 1, 4, '2026-11-22 21:20:50', '2026-11-22 21:40:26'),
-(39, 1, 19, 1, '2026-11-22 21:20:54', '2026-11-22 21:20:54'),
-(42, 1, 2, 1, '2026-11-22 21:21:24', '2026-11-22 21:21:24'),
-(43, 1, 50, 1, '2026-11-22 21:37:02', '2026-11-22 21:37:02'),
-(44, 1, 47, 1, '2026-11-22 21:37:11', '2026-11-22 21:37:11');
+(23, 13, 53, 3, '2026-11-22 20:00:38', '2026-11-22 20:00:38');
 
 -- --------------------------------------------------------
 
@@ -245,7 +232,12 @@ CREATE TABLE `notifications` (
 
 INSERT INTO `notifications` (`id`, `user_id`, `type`, `title`, `message`, `link`, `is_read`, `created_at`) VALUES
 (1, 13, 'order_placed', 'Đặt hàng thành công', 'Đơn BH48 đã được tiếp nhận, chúng tôi sẽ sớm xử lý.', '/orders/BH48', 1, '2026-11-22 19:50:06'),
-(2, 1, 'contact_replied', 'Liên hệ của bạn đã được phản hồi', 'mai nha', '/contacts', 1, '2026-11-22 21:38:07');
+(2, 1, 'contact_replied', 'Liên hệ của bạn đã được phản hồi', 'mai nha', '/contacts', 1, '2026-11-22 21:38:07'),
+(3, 3, 'order_placed', 'Đặt hàng thành công', 'Đơn BH49 đã được tiếp nhận, chúng tôi sẽ sớm xử lý.', '/orders/BH49', 1, '2026-11-26 08:52:44'),
+(4, 3, 'order_processing', 'Đơn hàng đã được xác nhận', 'Đơn BH49 đang được chuẩn bị.', '/orders/BH49', 1, '2026-11-26 08:57:57'),
+(5, 3, 'order_shipped', 'Đơn hàng đang được giao', 'Đơn BH49 đang trên đường đến bạn.', '/orders/BH49', 1, '2026-11-26 08:57:58'),
+(6, 3, 'order_delivered', 'Đơn hàng đã hoàn tất', 'Đơn BH49 đã giao thành công.', '/orders/BH49', 1, '2026-11-26 08:57:58'),
+(7, 3, 'review_reminder', 'Hãy đánh giá sản phẩm bạn vừa mua', 'Đơn BH49 đã hoàn tất — chia sẻ cảm nhận của bạn để giúp người mua sau nhé!', '/orders/BH49', 1, '2026-11-26 08:57:58');
 
 -- --------------------------------------------------------
 
@@ -322,7 +314,8 @@ INSERT INTO `orders` (`id`, `order_code`, `user_id`, `recipient_name`, `shipping
 (45, 'BH45', 8, 'Đặng Đăng Khoa', '0919334455', '71 Phan Chu Trinh, Hoàn Kiếm, Hà Nội', 'Giao buổi tối sau 18h.', 'cod', 'unpaid', 'pending', 30000, 411000, '2026-11-15 14:40:00', '2026-11-15 14:40:00'),
 (46, 'BH46', 3, 'Nguyễn Văn A', '0901234567', '12 Trần Hưng Đạo, Quận 5, TP.HCM', 'Giao giờ hành chính giúp mình nhé.', 'vietqr', 'paid', 'processing', 30000, 198000, '2026-11-16 08:48:00', '2026-11-16 18:48:00'),
 (47, 'BH47', 3, 'Nguyễn Văn A', '0901234567', '12 Trần Hưng Đạo, Quận 5, TP.HCM', NULL, 'cod', 'unpaid', 'pending', 30000, 150000, '2026-11-17 05:40:00', '2026-11-17 05:40:00'),
-(48, 'BH48', 13, 'ngoc hong', '0334583507', 'nn', NULL, 'vietqr', 'unpaid', 'pending', 30000, 1608000, '2026-11-22 19:50:06', '2026-11-22 19:50:06');
+(48, 'BH48', 13, 'ngoc hong', '0334583507', 'nn', NULL, 'vietqr', 'unpaid', 'pending', 30000, 1608000, '2026-11-22 19:50:06', '2026-11-22 19:50:06'),
+(49, 'BH49', 3, 'Nguyễn Văn A', '0901234567', '12 Trần Hưng Đạo, Quận 5, TP.HCM', NULL, 'cod', 'paid', 'delivered', 30000, 198000, '2026-11-26 08:52:44', '2026-11-26 08:57:58');
 
 -- --------------------------------------------------------
 
@@ -491,7 +484,8 @@ INSERT INTO `order_items` (`id`, `order_id`, `product_id`, `product_name`, `unit
 (142, 46, 22, 'Dầu Ăn Thực Vật Tường An', 52000, 1, 'processing', '2026-11-16 08:48:00', '2026-11-16 18:48:00'),
 (143, 47, 15, 'Mật Ong Hoa Nhãn', 120000, 1, 'pending', '2026-11-17 05:40:00', '2026-11-17 05:40:00'),
 (144, 48, 18, 'Siro Đường Vàng (Golden Syrup)', 79000, 18, 'pending', '2026-11-22 19:50:06', '2026-11-22 19:50:06'),
-(145, 48, 66, 'Kem Tartar (Cream of Tartar)', 52000, 3, 'pending', '2026-11-22 19:50:06', '2026-11-22 19:50:06');
+(145, 48, 66, 'Kem Tartar (Cream of Tartar)', 52000, 3, 'pending', '2026-11-22 19:50:06', '2026-11-22 19:50:06'),
+(146, 49, 9, 'Bột Mì Nguyên Cám (Whole Wheat)', 42000, 4, 'delivered', '2026-11-26 08:52:44', '2026-11-26 08:57:58');
 
 -- --------------------------------------------------------
 
@@ -690,7 +684,11 @@ INSERT INTO `order_status_histories` (`id`, `order_id`, `from_status`, `to_statu
 (175, 46, NULL, 'pending', 3, '2026-11-16 08:48:00'),
 (176, 46, 'pending', 'processing', 1, '2026-11-16 18:48:00'),
 (177, 47, NULL, 'pending', 3, '2026-11-17 05:40:00'),
-(178, 48, NULL, 'pending', 13, '2026-11-22 19:50:06');
+(178, 48, NULL, 'pending', 13, '2026-11-22 19:50:06'),
+(179, 49, NULL, 'pending', 3, '2026-11-26 08:52:44'),
+(180, 49, 'pending', 'processing', 1, '2026-11-26 08:57:57'),
+(181, 49, 'processing', 'shipped', 1, '2026-11-26 08:57:58'),
+(182, 49, 'shipped', 'delivered', 1, '2026-11-26 08:57:58');
 
 -- --------------------------------------------------------
 
@@ -738,30 +736,30 @@ CREATE TABLE `products` (
 INSERT INTO `products` (`id`, `category_id`, `brand_id`, `name`, `slug`, `description`, `unit`, `price`, `stock_quantity`, `image_path`, `is_featured`, `is_active`, `rating_avg`, `rating_count`, `created_at`, `updated_at`) VALUES
 (1, 1, 1, 'Bột Mì Đa Dụng (All-purpose Flour)', 'bot-mi-da-dung', 'Bột mì đa dụng phù hợp làm bánh quy, bánh bông lan và bánh muffin. Độ đạm vừa phải, dễ sử dụng cho người mới.', 'gói 1kg', 28000, 180, 'uploads/products/bot-mi-da-dung.jpg', 1, 1, 0.00, 0, '2025-11-05 02:00:00', '2025-11-05 02:00:00'),
 (2, 1, 1, 'Bột Mì Số 11 (Bread Flour)', 'bot-mi-so-11', 'Bột mì hàm lượng protein cao, chuyên làm bánh mì, pizza và bánh bao cho độ dai ngon.', 'gói 1kg', 32000, 140, 'uploads/products/bot-mi-so-11.jpg', 1, 1, 4.00, 1, '2025-11-05 02:00:00', '2025-11-05 02:00:00'),
-(3, 1, 1, 'Bột Mì Số 8 (Cake Flour)', 'bot-mi-so-8', 'Bột mì đạm thấp, mịn nhẹ, cho ruột bánh bông lan và chiffon mềm xốp.', 'gói 1kg', 34000, 95, NULL, 0, 1, 5.00, 1, '2025-11-08 02:00:00', '2025-11-08 02:00:00'),
-(4, 1, 4, 'Bột Bắp Biên Hòa', 'bot-bap-bien-hoa', 'Bột bắp dùng làm đặc sốt, làm mềm bánh quy và pha bột chiên.', 'hộp 400g', 18000, 150, 'uploads/products/bot-bap-bien-hoa.jpg', 0, 1, 4.00, 1, '2025-11-08 02:00:00', '2025-11-08 02:00:00'),
+(3, 1, 1, 'Bột Mì Số 8 (Cake Flour)', 'bot-mi-so-8', 'Bột mì đạm thấp, mịn nhẹ, cho ruột bánh bông lan và chiffon mềm xốp.', 'gói 1kg', 34000, 95, 'uploads/products/ca309d047c4a32e8c2a68ee3cadab308.jpg', 0, 1, 5.00, 1, '2025-11-08 02:00:00', '2026-11-26 07:05:22'),
+(4, 1, 4, 'Bột Bắp Biên Hòa', 'bot-bap-bien-hoa', 'Bột bắp dùng làm đặc sốt, làm mềm bánh quy và pha bột chiên.', 'hộp 400g', 18000, 150, 'uploads/products/16227f73e35ff90e567b2867be6f7438.jpg', 0, 1, 4.00, 1, '2025-11-08 02:00:00', '2026-11-26 11:07:08'),
 (5, 1, NULL, 'Yến Mạch Cán Dẹt', 'yen-mach-can-det', 'Yến mạch nguyên hạt cán dẹt, dùng làm cookie, granola và bánh ăn kiêng.', 'gói 500g', 45000, 70, 'uploads/products/yen-mach-can-det.jpg', 0, 1, 5.00, 1, '2025-11-10 02:00:00', '2025-11-10 02:00:00'),
 (6, 1, NULL, 'Bột Gạo Nếp', 'bot-gao-nep', 'Bột gạo nếp xay mịn, làm bánh dẻo, bánh trôi, mochi và bánh giầy.', 'gói 400g', 19000, 85, 'uploads/products/bot-gao-nep.jpg', 0, 1, 5.00, 1, '2025-11-12 02:00:00', '2025-11-12 02:00:00'),
-(7, 1, NULL, 'Bột Năng (Tapioca Starch)', 'bot-nang', 'Bột năng tinh khiết, tạo độ trong và dai cho bánh bột lọc, trân châu, bánh flan.', 'gói 400g', 16000, 110, NULL, 0, 1, 4.33, 3, '2025-11-12 02:00:00', '2025-11-12 02:00:00'),
-(8, 1, NULL, 'Bột Hạnh Nhân', 'bot-hanh-nhan', 'Bột hạnh nhân xay mịn, nguyên liệu chính của macaron, financier và bánh không gluten.', 'gói 200g', 98000, 38, NULL, 1, 1, 3.00, 2, '2025-11-15 02:00:00', '2025-11-15 02:00:00'),
-(9, 1, 1, 'Bột Mì Nguyên Cám (Whole Wheat)', 'bot-mi-nguyen-cam', 'Bột mì nguyên cám giàu chất xơ, thích hợp làm bánh mì đen và bánh quy ăn kiêng.', 'gói 1kg', 42000, 6, 'uploads/products/bot-mi-nguyen-cam.jpg', 0, 1, 5.00, 3, '2026-01-10 02:00:00', '2026-01-10 02:00:00'),
+(7, 1, NULL, 'Bột Năng (Tapioca Starch)', 'bot-nang', 'Bột năng tinh khiết, tạo độ trong và dai cho bánh bột lọc, trân châu, bánh flan.', 'gói 400g', 16000, 110, 'uploads/products/e2be25f91cc6766fd92fdf6327589463.webp', 0, 1, 4.33, 3, '2025-11-12 02:00:00', '2026-11-26 07:04:50'),
+(8, 1, NULL, 'Bột Hạnh Nhân', 'bot-hanh-nhan', 'Bột hạnh nhân xay mịn, nguyên liệu chính của macaron, financier và bánh không gluten.', 'gói 200g', 98000, 38, 'uploads/products/0e69c910289d2a49366c52d0d2e7db80.jpg', 1, 1, 3.00, 2, '2025-11-15 02:00:00', '2026-11-26 07:04:26'),
+(9, 1, 1, 'Bột Mì Nguyên Cám (Whole Wheat)', 'bot-mi-nguyen-cam', 'Bột mì nguyên cám giàu chất xơ, thích hợp làm bánh mì đen và bánh quy ăn kiêng.', 'gói 1kg', 42000, 2, 'uploads/products/bot-mi-nguyen-cam.jpg', 0, 1, 4.75, 4, '2026-01-10 02:00:00', '2026-11-26 09:00:07'),
 (10, 1, NULL, 'Granola Trộn Hạt Và Mật Ong', 'granola-mix', 'Granola giòn nướng với yến mạch, hạt và mật ong, ăn kèm sữa chua hoặc rắc lên bánh.', 'gói 400g', 85000, 42, 'uploads/products/granola-mix.jpg', 0, 1, 5.00, 1, '2026-02-03 02:00:00', '2026-02-03 02:00:00'),
 (11, 2, 6, 'Đường Cát Trắng', 'duong-cat-trang', 'Đường cát trắng tinh luyện, hạt mịn dễ tan.', 'gói 1kg', 24000, 220, 'uploads/products/duong-cat-trang.jpg', 0, 1, 3.00, 1, '2025-11-05 02:00:00', '2025-11-05 02:00:00'),
 (12, 2, 6, 'Đường Nâu Muscovado', 'duong-nau-muscovado', 'Đường nâu giàu mật mía, hương caramel đậm, cho cookie và bánh gừng thơm hơn.', 'gói 500g', 38000, 100, 'uploads/products/duong-nau-muscovado.jpg', 0, 1, 0.00, 0, '2025-11-06 02:00:00', '2025-11-06 02:00:00'),
-(13, 2, 6, 'Đường Bột (Icing Sugar)', 'duong-bot', 'Đường xay mịn có pha bột bắp, dùng làm kem bơ, glaze và phủ mặt bánh.', 'gói 500g', 22000, 130, NULL, 0, 1, 0.00, 0, '2025-11-06 02:00:00', '2025-11-06 02:00:00'),
-(14, 2, 6, 'Đường Caster Hạt Mịn', 'duong-caster', 'Đường hạt siêu mịn tan nhanh, lý tưởng để đánh bông trứng và làm meringue.', 'gói 500g', 26000, 90, NULL, 0, 1, 5.00, 2, '2025-11-10 02:00:00', '2025-11-10 02:00:00'),
-(15, 2, NULL, 'Mật Ong Hoa Nhãn', 'mat-ong-hoa-nhan', 'Mật ong nguyên chất, dùng làm bánh, ướp thịt và pha đồ uống.', 'chai 500ml', 120000, 40, 'uploads/products/mat-ong-hoa-nhan.jpg', 0, 1, 4.00, 1, '2025-11-12 02:00:00', '2025-11-12 02:00:00'),
+(13, 2, 6, 'Đường Bột (Icing Sugar)', 'duong-bot', 'Đường xay mịn có pha bột bắp, dùng làm kem bơ, glaze và phủ mặt bánh.', 'gói 500g', 22000, 130, 'uploads/products/f21ebd64c48906006a538e2d7336c568.jpg', 0, 1, 0.00, 0, '2025-11-06 02:00:00', '2026-11-26 07:04:01'),
+(14, 2, 6, 'Đường Caster Hạt Mịn', 'duong-caster', 'Đường hạt siêu mịn tan nhanh, lý tưởng để đánh bông trứng và làm meringue.', 'gói 500g', 26000, 90, 'uploads/products/169d92bbbc6a0d136be34f98aa0e714b.jpg', 0, 1, 5.00, 2, '2025-11-10 02:00:00', '2026-11-26 06:41:08'),
+(15, 2, NULL, 'Mật Ong Hoa Nhãn', 'mat-ong-hoa-nhan', 'Mật ong nguyên chất, dùng làm bánh, ướp thịt và pha đồ uống.', 'chai 500ml', 120000, 40, 'uploads/products/mat-ong-hoa-nhan.jpg', 0, 1, 4.00, 1, '2025-11-12 02:00:00', '2026-11-26 09:40:32'),
 (16, 2, NULL, 'Siro Phong (Maple Syrup)', 'siro-phong', 'Siro cây phong nguyên chất nhập khẩu Canada, rưới pancake, waffle và làm bánh.', 'chai 250ml', 165000, 0, 'uploads/products/siro-phong.jpg', 0, 1, 3.00, 1, '2026-02-14 02:00:00', '2026-02-14 02:00:00'),
 (17, 2, NULL, 'Mạch Nha (Malt Syrup)', 'mach-nha', 'Mạch nha đặc, giúp bánh mì có màu đẹp và vỏ bóng, bánh quy giữ ẩm lâu.', 'lọ 400g', 48000, 24, 'uploads/products/mach-nha.jpg', 0, 1, 3.50, 2, '2026-03-01 02:00:00', '2026-03-01 02:00:00'),
-(18, 2, NULL, 'Siro Đường Vàng (Golden Syrup)', 'golden-syrup', 'Siro đường vàng sánh mịn, vị caramel nhẹ, dùng cho bánh flapjack, bánh gừng và kẹo.', 'chai 454g', 79000, 0, 'uploads/products/golden-syrup.jpg', 0, 1, 4.50, 2, '2026-04-02 02:00:00', '2026-11-22 19:50:06'),
+(18, 2, NULL, 'Siro Đường Vàng (Golden Syrup)', 'golden-syrup', 'Siro đường vàng sánh mịn, vị caramel nhẹ, dùng cho bánh flapjack, bánh gừng và kẹo.', 'chai 454g', 79000, 0, 'uploads/products/5a57080098940fcfd491db6b46813004.jpg', 0, 1, 4.50, 2, '2026-04-02 02:00:00', '2026-11-26 11:06:06'),
 (19, 3, 2, 'Bơ Lạt Anchor', 'bo-lat-anchor', 'Bơ lạt nhập khẩu New Zealand, béo thơm tự nhiên, làm bánh quy và kem bơ.', 'cục 227g', 65000, 120, 'uploads/products/bo-lat-anchor.jpg', 1, 1, 5.00, 1, '2025-11-05 02:00:00', '2025-11-05 02:00:00'),
 (20, 3, 2, 'Bơ Mặn Anchor', 'bo-man-anchor', 'Bơ mặn dùng phết bánh mì, nấu ăn và làm bánh quy bơ mặn.', 'cục 227g', 66000, 70, 'uploads/products/bo-man-anchor.jpg', 0, 1, 0.00, 0, '2025-11-06 02:00:00', '2025-11-06 02:00:00'),
-(21, 3, 13, 'Bơ Lạt Président', 'bo-lat-president', 'Bơ lạt kiểu Pháp 82% béo, cho croissant và bánh puff nhiều lớp thơm ngậy.', 'cục 200g', 78000, 55, NULL, 1, 1, 4.33, 3, '2025-12-02 02:00:00', '2025-12-02 02:00:00'),
-(22, 3, 3, 'Dầu Ăn Thực Vật Tường An', 'dau-an-tuong-an', 'Dầu ăn tinh luyện, không mùi, dùng cho bánh bông lan, chiffon và cupcake.', 'chai 1L', 52000, 80, NULL, 0, 1, 5.00, 1, '2025-11-06 02:00:00', '2025-11-06 02:00:00'),
+(21, 3, 13, 'Bơ Lạt Président', 'bo-lat-president', 'Bơ lạt kiểu Pháp 82% béo, cho croissant và bánh puff nhiều lớp thơm ngậy.', 'cục 200g', 78000, 55, 'uploads/products/482702528b76323e45352d947de993f9.jpg', 1, 1, 4.33, 3, '2025-12-02 02:00:00', '2026-11-26 07:03:12'),
+(22, 3, 3, 'Dầu Ăn Thực Vật Tường An', 'dau-an-tuong-an', 'Dầu ăn tinh luyện, không mùi, dùng cho bánh bông lan, chiffon và cupcake.', 'chai 1L', 52000, 80, 'uploads/products/cb392e1004f310a8714542950f866a8a.webp', 0, 1, 5.00, 1, '2025-11-06 02:00:00', '2026-11-26 07:03:32'),
 (23, 3, NULL, 'Bơ Thực Vật Margarine', 'margarine', 'Margarine mềm dẻo, giá tốt, phù hợp làm bánh mì ngọt, bánh quy và phủ khuôn.', 'hộp 500g', 58000, 48, 'uploads/products/margarine.jpg', 0, 1, 4.50, 2, '2025-12-05 02:00:00', '2025-12-05 02:00:00'),
 (24, 3, NULL, 'Shortening (Mỡ Thực Vật Làm Bánh)', 'shortening', 'Shortening trắng không mùi, cho bánh quy xốp, vỏ bánh pie giòn và kem bơ bền dáng.', 'hộp 1kg', 95000, 22, 'uploads/products/shortening.jpg', 0, 1, 4.00, 1, '2026-01-15 02:00:00', '2026-01-15 02:00:00'),
 (25, 3, NULL, 'Dầu Dừa Nguyên Chất', 'dau-dua', 'Dầu dừa ép lạnh thơm nhẹ, thay thế bơ trong bánh thuần chay và phủ socola.', 'chai 500ml', 85000, 31, 'uploads/products/dau-dua.jpg', 0, 1, 0.00, 0, '2026-02-20 02:00:00', '2026-02-20 02:00:00'),
-(26, 4, 5, 'Khuôn Bánh Tròn Wilton 20cm', 'khuon-banh-tron-wilton', 'Khuôn nhôm chống dính, đường kính 20cm, cao 7cm, dùng cho bánh bông lan và bánh kem.', 'cái', 145000, 25, NULL, 1, 1, 3.67, 3, '2025-11-07 02:00:00', '2025-11-07 02:00:00'),
+(26, 4, 5, 'Khuôn Bánh Tròn Wilton 20cm', 'khuon-banh-tron-wilton', 'Khuôn nhôm chống dính, đường kính 20cm, cao 7cm, dùng cho bánh bông lan và bánh kem.', 'cái', 145000, 25, 'uploads/products/2b2f2e8d3e38ebb1cc22d2932de781bb.webp', 1, 1, 3.67, 3, '2025-11-07 02:00:00', '2026-11-26 07:02:39'),
 (27, 4, NULL, 'Cân Điện Tử Nhà Bếp 5kg', 'can-dien-tu-5kg', 'Cân điện tử độ chính xác 1g, tối đa 5kg, có chức năng trừ bì.', 'cái', 175000, 30, 'uploads/products/can-dien-tu-5kg.jpg', 1, 1, 5.00, 1, '2025-11-07 02:00:00', '2025-11-07 02:00:00'),
 (28, 4, 5, 'Phới Đánh Trứng Inox', 'phoi-danh-trung-inox', 'Phới lồng inox 304 cán dài, bền chắc, đánh trứng và kem tươi nhanh.', 'cái', 55000, 60, 'uploads/products/phoi-danh-trung-inox.jpg', 0, 1, 0.00, 0, '2025-11-08 02:00:00', '2025-11-08 02:00:00'),
 (29, 4, NULL, 'Giấy Nến Nướng Bánh', 'giay-nen-nuong-banh', 'Giấy nến chống dính, chịu nhiệt đến 220°C, lót khay nướng và khuôn.', 'cuộn 5m', 32000, 100, 'uploads/products/giay-nen-nuong-banh.jpg', 0, 1, 5.00, 1, '2025-11-08 02:00:00', '2025-11-08 02:00:00'),
@@ -769,39 +767,39 @@ INSERT INTO `products` (`id`, `category_id`, `brand_id`, `name`, `slug`, `descri
 (31, 4, NULL, 'Rây Bột Cầm Tay', 'ray-bot-cam-tay', 'Rây inox mịn, lọc bột và đường tơi xốp, loại bỏ vón cục.', 'cái', 48000, 55, 'uploads/products/ray-bot-cam-tay.jpg', 0, 1, 0.00, 0, '2025-11-10 02:00:00', '2025-11-10 02:00:00'),
 (32, 4, NULL, 'Cọ Phết Bơ Silicon', 'co-phet-bo-silicon', 'Cọ silicon mềm, chịu nhiệt, phết bơ, trứng và siro lên bánh.', 'cái', 29000, 90, 'uploads/products/co-phet-bo-silicon.jpg', 0, 1, 2.50, 2, '2025-11-12 02:00:00', '2025-11-12 02:00:00'),
 (33, 4, 5, 'Khuôn Cupcake 12 Ly Wilton', 'khuon-cupcake-12-ly', 'Khay 12 ly cupcake/muffin chống dính, dùng được trong lò nướng đến 230°C.', 'cái', 135000, 28, 'uploads/products/khuon-cupcake-12-ly.jpg', 0, 1, 5.00, 2, '2025-12-01 02:00:00', '2025-12-01 02:00:00'),
-(34, 4, NULL, 'Phới Dẹt Silicon (Spatula)', 'spatula-silicon', 'Spatula silicon chịu nhiệt, vét sạch tô, trộn bột nhẹ tay.', 'cái', 42000, 75, NULL, 0, 1, 5.00, 1, '2025-12-01 02:00:00', '2025-12-01 02:00:00'),
+(34, 4, NULL, 'Phới Dẹt Silicon (Spatula)', 'spatula-silicon', 'Spatula silicon chịu nhiệt, vét sạch tô, trộn bột nhẹ tay.', 'cái', 42000, 75, 'uploads/products/cdee5df693f6a6b4753903881dc1b218.webp', 0, 1, 5.00, 1, '2025-12-01 02:00:00', '2026-11-26 11:05:15'),
 (35, 4, NULL, 'Máy Đánh Trứng Cầm Tay 5 Tốc Độ', 'may-danh-trung-cam-tay', 'Máy đánh trứng cầm tay công suất 300W, 5 tốc độ, kèm 2 que đánh và 2 que nhồi bột.', 'cái', 420000, 14, 'uploads/products/may-danh-trung-cam-tay.jpg', 1, 1, 4.00, 1, '2025-12-10 02:00:00', '2025-12-10 02:00:00'),
 (36, 4, NULL, 'Khuôn Bánh Mì Hình Chữ Nhật', 'khuon-banh-mi-hop', 'Khuôn nướng bánh mì sandwich thép carbon phủ chống dính, kích thước 25x12cm.', 'cái', 98000, 33, 'uploads/products/khuon-banh-mi-hop.jpg', 0, 1, 4.00, 2, '2026-01-05 02:00:00', '2026-01-05 02:00:00'),
-(37, 4, 5, 'Bộ Túi Bắt Kem Và Đui Inox 12 Món Wilton', 'tui-bat-kem-bo-12', 'Bộ 8 đui inox, 2 đầu nối, 2 túi bắt kem tái sử dụng để trang trí bánh kem, cupcake.', 'bộ', 185000, 20, NULL, 0, 1, 5.00, 3, '2026-01-20 02:00:00', '2026-01-20 02:00:00'),
+(37, 4, 5, 'Bộ Túi Bắt Kem Và Đui Inox 12 Món Wilton', 'tui-bat-kem-bo-12', 'Bộ 8 đui inox, 2 đầu nối, 2 túi bắt kem tái sử dụng để trang trí bánh kem, cupcake.', 'bộ', 185000, 20, 'uploads/products/f1453246ef7c6343c1b9d80405aeb514.jpg', 0, 1, 5.00, 3, '2026-01-20 02:00:00', '2026-11-26 07:02:17'),
 (38, 4, NULL, 'Nhiệt Kế Lò Nướng', 'nhiet-ke-lo-nuong', 'Nhiệt kế treo lò, thang đo 0-300°C, giúp kiểm soát nhiệt độ nướng chính xác.', 'cái', 89000, 4, 'uploads/products/nhiet-ke-lo-nuong.jpg', 0, 1, 5.00, 1, '2026-03-10 02:00:00', '2026-03-10 02:00:00'),
 (39, 4, NULL, 'Tô Trộn Inox 24cm', 'to-tron-inox-24', 'Tô inox đáy chống trượt, dùng trộn bột, đánh trứng và ủ bột bánh mì.', 'cái', 85000, 45, 'uploads/products/to-tron-inox-24.jpg', 0, 1, 4.00, 1, '2026-04-12 02:00:00', '2026-04-12 02:00:00'),
-(40, 5, 7, 'Tinh Chất Vani Nguyên Chất', 'tinh-chat-vani', 'Vani nguyên chất từ Madagascar, hương thơm sâu, dùng cho kem, custard và bánh.', 'chai 60ml', 220000, 20, 'uploads/products/tinh-chat-vani.jpg', 1, 1, 3.00, 1, '2025-11-15 02:00:00', '2025-11-15 02:00:00'),
+(40, 5, 7, 'Tinh Chất Vani Nguyên Chất', 'tinh-chat-vani', 'Vani nguyên chất từ Madagascar, hương thơm sâu, dùng cho kem, custard và bánh.', 'chai 60ml', 220000, 20, 'uploads/products/a2de8c42d7ef2cf74786c42650c73b9d.webp', 1, 1, 3.00, 1, '2025-11-15 02:00:00', '2026-11-26 10:45:12'),
 (41, 5, NULL, 'Bột Cacao Nguyên Chất', 'bot-cacao-nguyen-chat', 'Bột cacao không đường, vị đắng đậm đà, làm bánh brownie, mousse và đồ uống.', 'gói 250g', 75000, 55, 'uploads/products/bot-cacao-nguyen-chat.jpg', 0, 1, 2.67, 3, '2025-11-15 02:00:00', '2025-11-15 02:00:00'),
 (42, 5, NULL, 'Bột Trà Xanh Matcha', 'bot-tra-xanh-matcha', 'Bột matcha Nhật Bản, màu xanh tươi, dùng làm bánh, kem và đồ uống.', 'gói 100g', 150000, 45, 'uploads/products/bot-tra-xanh-matcha.jpg', 1, 1, 0.00, 0, '2025-11-20 02:00:00', '2025-11-20 02:00:00'),
 (43, 5, 5, 'Màu Thực Phẩm Dạng Gel Wilton (Bộ 4 Màu)', 'mau-thuc-pham-gel', 'Bộ 4 màu gel đậm đặc (đỏ, vàng, xanh dương, xanh lá), chỉ cần vài giọt, không làm loãng kem.', 'bộ', 120000, 26, 'uploads/products/mau-thuc-pham-gel.jpg', 0, 1, 0.00, 0, '2025-12-08 02:00:00', '2025-12-08 02:00:00'),
 (44, 5, NULL, 'Bột Quế', 'bot-que', 'Bột quế Việt Nam thơm nồng, dùng cho bánh táo, cinnamon roll và đồ uống.', 'gói 50g', 38000, 65, 'uploads/products/bot-que.jpg', 0, 1, 0.00, 0, '2025-12-15 02:00:00', '2025-12-15 02:00:00'),
-(45, 5, 9, 'Đường Vani Dr. Oetker', 'duong-vani-dr-oetker', 'Đường vani gói nhỏ tiện dụng, tạo hương vani nhẹ cho bánh quy, pancake và custard.', 'hộp 3 gói', 28000, 90, NULL, 0, 1, 0.00, 0, '2026-02-08 02:00:00', '2026-02-08 02:00:00'),
-(46, 5, NULL, 'Rượu Rum Làm Bánh', 'ruou-rum-lam-banh', 'Rượu rum nâu dùng ngâm trái cây khô và làm bánh trái cây, tiramisu. Sản phẩm đã ngừng nhập.', 'chai 100ml', 72000, 8, NULL, 0, 0, 0.00, 0, '2025-12-20 02:00:00', '2025-12-20 02:00:00'),
+(45, 5, 9, 'Đường Vani Dr. Oetker', 'duong-vani-dr-oetker', 'Đường vani gói nhỏ tiện dụng, tạo hương vani nhẹ cho bánh quy, pancake và custard.', 'hộp 3 gói', 28000, 90, 'uploads/products/d9d357fd29383c6efff8d1db1db3d888.jpg', 0, 1, 0.00, 0, '2026-02-08 02:00:00', '2026-11-26 07:01:49'),
+(46, 5, NULL, 'Rượu Rum Làm Bánh', 'ruou-rum-lam-banh', 'Rượu rum nâu dùng ngâm trái cây khô và làm bánh trái cây, tiramisu. Sản phẩm đã ngừng nhập.', 'chai 100ml', 72000, 8, 'uploads/products/c0d4c0323243455aad87ed9027ca62ce.jpg', 0, 0, 0.00, 0, '2025-12-20 02:00:00', '2026-11-26 07:01:17'),
 (47, 6, 2, 'Kem Tươi Whipping Cream Anchor', 'kem-tuoi-whipping-cream', 'Whipping cream 35% béo, đánh bông ổn định, làm kem phủ bánh và mousse.', 'hộp 1L', 135000, 35, 'uploads/products/kem-tuoi-whipping-cream.jpg', 1, 1, 4.67, 3, '2025-11-15 02:00:00', '2025-11-15 02:00:00'),
-(48, 6, 8, 'Sữa Tươi Tiệt Trùng Không Đường Vinamilk', 'sua-tuoi-vinamilk', 'Sữa tươi 100% không đường, dùng làm bánh, pudding và pha chế.', 'hộp 1L', 33000, 160, NULL, 0, 1, 4.00, 1, '2025-11-15 02:00:00', '2025-11-15 02:00:00'),
-(49, 6, 8, 'Sữa Đặc Có Đường Ông Thọ', 'sua-dac-ong-tho', 'Sữa đặc có đường, vị béo ngọt, dùng làm bánh flan, bánh bông lan sữa và cà phê.', 'lon 380g', 24000, 120, NULL, 0, 1, 5.00, 2, '2025-11-20 02:00:00', '2025-11-20 02:00:00'),
+(48, 6, 8, 'Sữa Tươi Tiệt Trùng Không Đường Vinamilk', 'sua-tuoi-vinamilk', 'Sữa tươi 100% không đường, dùng làm bánh, pudding và pha chế.', 'hộp 1L', 33000, 160, 'uploads/products/65c16b11124adb4cc2d7972857aac8b6.png', 0, 1, 4.00, 1, '2025-11-15 02:00:00', '2026-11-26 07:00:41'),
+(49, 6, 8, 'Sữa Đặc Có Đường Ông Thọ', 'sua-dac-ong-tho', 'Sữa đặc có đường, vị béo ngọt, dùng làm bánh flan, bánh bông lan sữa và cà phê.', 'lon 380g', 24000, 120, 'uploads/products/1eae17ac1ebcac1693698beee77b2635.jpg', 0, 1, 5.00, 2, '2025-11-20 02:00:00', '2026-11-26 07:00:13'),
 (50, 6, 12, 'Phô Mai Kem Philadelphia', 'phomai-kem-philadelphia', 'Cream cheese mịn béo, dùng cho cheesecake, frosting và bánh cuộn.', 'hộp 200g', 79000, 52, 'uploads/products/phomai-kem-philadelphia.jpg', 1, 1, 4.00, 2, '2025-12-02 02:00:00', '2025-12-02 02:00:00'),
 (51, 6, NULL, 'Phô Mai Mascarpone', 'phomai-mascarpone', 'Mascarpone Ý béo mịn, nguyên liệu chính của tiramisu và các loại kem mousse.', 'hộp 250g', 95000, 0, 'uploads/products/phomai-mascarpone.jpg', 0, 1, 0.00, 0, '2026-01-12 02:00:00', '2026-01-12 02:00:00'),
 (52, 6, NULL, 'Trứng Gà Ta', 'trung-ga-ta', 'Trứng gà ta tuyển chọn, lòng đỏ đậm, làm bánh bông lan, custard và bánh flan.', 'vỉ 10 quả', 38000, 75, 'uploads/products/trung-ga-ta.jpg', 0, 1, 4.00, 1, '2025-11-15 02:00:00', '2025-11-15 02:00:00'),
-(53, 7, NULL, 'Socola Chip Bán Ngọt', 'socola-chip-ban-ngot', 'Socola viên nhỏ chịu nhiệt, rắc cookie, muffin và brownie.', 'gói 250g', 68000, 80, 'uploads/products/socola-chip-ban-ngot.jpg', 0, 1, 4.33, 3, '2025-11-18 02:00:00', '2025-11-18 02:00:00'),
+(53, 7, NULL, 'Socola Chip Bán Ngọt', 'socola-chip-ban-ngot', 'Socola viên nhỏ chịu nhiệt, rắc cookie, muffin và brownie.', 'gói 250g', 68000, 80, 'uploads/products/ab346ade57144545230f54c37e432553.jpg', 0, 1, 4.33, 3, '2025-11-18 02:00:00', '2026-11-26 06:59:32'),
 (54, 7, 10, 'Socola Đen Callebaut 54% (Callets)', 'socola-den-callebaut', 'Socola đen Bỉ dạng viên dễ tan chảy, dùng làm ganache, mousse và phủ bánh.', 'gói 400g', 195000, 22, 'uploads/products/socola-den-callebaut.jpg', 1, 1, 5.00, 1, '2025-12-03 02:00:00', '2025-12-03 02:00:00'),
-(55, 7, 10, 'Socola Trắng Callebaut (Callets)', 'socola-trang-callebaut', 'Socola trắng Bỉ béo ngọt, dùng làm ganache trắng, mousse và trang trí.', 'gói 400g', 195000, 0, NULL, 0, 1, 0.00, 0, '2025-12-03 02:00:00', '2025-12-03 02:00:00'),
-(56, 7, NULL, 'Hạnh Nhân Lát', 'hanh-nhan-lat', 'Hạnh nhân cắt lát mỏng, trang trí và tăng độ giòn cho bánh.', 'gói 200g', 89000, 50, NULL, 0, 1, 3.67, 3, '2025-11-18 02:00:00', '2025-11-18 02:00:00'),
-(57, 7, NULL, 'Óc Chó (Walnut) Nhập Khẩu', 'oc-cho', 'Nhân óc chó giòn bùi, làm brownie, bánh chuối và bánh mì hạt.', 'gói 200g', 98000, 36, 'uploads/products/oc-cho.jpg', 0, 1, 5.00, 2, '2025-12-10 02:00:00', '2025-12-10 02:00:00'),
+(55, 7, 10, 'Socola Trắng Callebaut (Callets)', 'socola-trang-callebaut', 'Socola trắng Bỉ béo ngọt, dùng làm ganache trắng, mousse và trang trí.', 'gói 400g', 195000, 0, 'uploads/products/55f661f229f664dba9dfb3d290d0c398.jpg', 0, 1, 0.00, 0, '2025-12-03 02:00:00', '2026-11-26 06:58:24'),
+(56, 7, NULL, 'Hạnh Nhân Lát', 'hanh-nhan-lat', 'Hạnh nhân cắt lát mỏng, trang trí và tăng độ giòn cho bánh.', 'gói 200g', 89000, 50, 'uploads/products/45784238df52ce680978ab5097a29b12.jpg', 0, 1, 3.67, 3, '2025-11-18 02:00:00', '2026-11-26 06:58:01'),
+(57, 7, NULL, 'Óc Chó (Walnut) Nhập Khẩu', 'oc-cho', 'Nhân óc chó giòn bùi, làm brownie, bánh chuối và bánh mì hạt.', 'gói 200g', 98000, 36, 'uploads/products/3974052113542a77111d75879b150f6d.webp', 0, 1, 5.00, 2, '2025-12-10 02:00:00', '2026-11-26 06:57:33'),
 (58, 7, NULL, 'Nho Khô Không Hạt', 'nho-kho', 'Nho khô mềm ngọt, dùng cho bánh mì nho, cookie yến mạch và bánh trái cây.', 'gói 250g', 55000, 64, 'uploads/products/nho-kho.jpg', 0, 1, 0.00, 0, '2025-12-12 02:00:00', '2025-12-12 02:00:00'),
-(59, 7, NULL, 'Dừa Sấy Sợi', 'dua-say-soi', 'Dừa nạo sấy khô giòn thơm, dùng làm bánh dừa, cookie và trang trí.', 'gói 200g', 42000, 58, 'uploads/products/dua-say-soi.jpg', 0, 1, 0.00, 0, '2026-01-08 02:00:00', '2026-01-08 02:00:00'),
+(59, 7, NULL, 'Dừa Sấy Sợi', 'dua-say-soi', 'Dừa nạo sấy khô giòn thơm, dùng làm bánh dừa, cookie và trang trí.', 'gói 200g', 42000, 58, 'uploads/products/9d0edb7441f467133f638b8b717f648e.jpg', 0, 1, 0.00, 0, '2026-01-08 02:00:00', '2026-11-26 11:08:02'),
 (60, 7, NULL, 'Nam Việt Quất Sấy', 'nam-viet-quat-say', 'Cranberry sấy chua ngọt, dùng cho cookie, scone và bánh mì hạt.', 'gói 250g', 89000, 29, 'uploads/products/nam-viet-quat-say.jpg', 0, 1, 5.00, 1, '2026-03-18 02:00:00', '2026-03-18 02:00:00'),
-(61, 8, 1, 'Bột Nở Baking Powder', 'bot-no-baking-powder', 'Bột nở không nhôm, giúp bánh nở xốp đều.', 'hộp 100g', 22000, 140, 'uploads/products/bot-no-baking-powder.jpg', 0, 1, 5.00, 1, '2025-11-06 02:00:00', '2025-11-06 02:00:00'),
-(62, 8, NULL, 'Baking Soda (Muối Nở)', 'baking-soda', 'Baking soda dùng cho bánh quy giòn, bánh gừng và pancake nở xốp.', 'gói 100g', 12000, 170, 'uploads/products/baking-soda.jpg', 0, 1, 0.00, 0, '2025-11-06 02:00:00', '2025-11-06 02:00:00'),
-(63, 8, 11, 'Men Khô Instant Mauri', 'men-kho-mauri', 'Men khô hoạt động nhanh, không cần ủ trước, làm bánh mì, pizza và bánh bao.', 'gói 100g', 45000, 88, NULL, 1, 1, 2.00, 1, '2025-11-10 02:00:00', '2025-11-10 02:00:00'),
-(64, 8, NULL, 'Gelatin Lá', 'gelatin-la', 'Gelatin dạng lá trong, không mùi, dùng làm mousse, panna cotta và bánh lạnh.', 'hộp 10 lá', 38000, 47, NULL, 0, 1, 0.00, 0, '2025-12-15 02:00:00', '2025-12-15 02:00:00'),
-(65, 8, NULL, 'Bột Rau Câu Dẻo', 'bot-rau-cau-deo', 'Bột rau câu dẻo (agar) tạo thạch trong, giòn dai cho rau câu và bánh trung thu.', 'gói 25g', 14000, 100, NULL, 0, 1, 4.00, 1, '2026-01-25 02:00:00', '2026-01-25 02:00:00'),
-(66, 8, NULL, 'Kem Tartar (Cream of Tartar)', 'kem-tartar', 'Chất ổn định lòng trắng trứng, giúp meringue và bánh chiffon lên bông bền.', 'hũ 50g', 52000, 0, 'uploads/products/kem-tartar.jpg', 0, 1, 0.00, 0, '2026-04-20 02:00:00', '2026-11-22 19:50:06');
+(61, 8, 1, 'Bột Nở Baking Powder', 'bot-no-baking-powder', 'Bột nở không nhôm, giúp bánh nở xốp đều.', 'hộp 100g', 22000, 140, 'uploads/products/8823e8028bac7bdf85767f9578099d58.jpg', 0, 1, 5.00, 1, '2025-11-06 02:00:00', '2026-11-26 06:57:11'),
+(62, 8, NULL, 'Baking Soda (Muối Nở)', 'baking-soda', 'Baking soda dùng cho bánh quy giòn, bánh gừng và pancake nở xốp.', 'gói 100g', 12000, 170, 'uploads/products/bd227362d171342237f47ee4cacb4901.jpg', 0, 1, 0.00, 0, '2025-11-06 02:00:00', '2026-11-26 06:56:29'),
+(63, 8, 11, 'Men Khô Instant Mauri', 'men-kho-mauri', 'Men khô hoạt động nhanh, không cần ủ trước, làm bánh mì, pizza và bánh bao.', 'gói 100g', 45000, 88, 'uploads/products/c9e08dc6dbe3084e08591d8a9a092646.jpg', 1, 1, 2.00, 1, '2025-11-10 02:00:00', '2026-11-26 06:51:13'),
+(64, 8, 15, 'Gelatin Lá', 'gelatin-la', 'Gelatin dạng lá trong, không mùi, dùng làm mousse, panna cotta và bánh lạnh.', 'hộp 10 lá', 38000, 47, 'uploads/products/98693642a644c3dbc4c8ef09dfe8fa1c.jpg', 0, 1, 0.00, 0, '2025-12-15 02:00:00', '2026-11-26 06:56:01'),
+(65, 8, 14, 'Bột Rau Câu Dẻo AGAR', 'bot-rau-cau-deo', 'Bột rau câu dẻo (agar) tạo thạch trong, giòn dai cho rau câu và bánh trung thu.', 'gói 25g', 14000, 100, 'uploads/products/b75d647db3aff34fbda616fe89a42328.jpg', 0, 1, 4.00, 1, '2026-01-25 02:00:00', '2026-11-26 06:54:41'),
+(66, 8, NULL, 'Kem Tartar (Cream of Tartar)', 'kem-tartar', 'Chất ổn định lòng trắng trứng, giúp meringue và bánh chiffon lên bông bền.', 'hũ 50g', 52000, 6, 'uploads/products/fc09ec677e1078cc111bd68d68391ed1.jpg', 0, 1, 0.00, 0, '2026-04-20 02:00:00', '2026-11-26 07:57:55');
 
 -- --------------------------------------------------------
 
@@ -824,7 +822,6 @@ CREATE TABLE `product_images` (
 INSERT INTO `product_images` (`id`, `product_id`, `image_path`, `is_primary`, `created_at`) VALUES
 (1, 1, 'uploads/products/bot-mi-da-dung.jpg', 1, '2026-11-22 18:00:40'),
 (2, 2, 'uploads/products/bot-mi-so-11.jpg', 1, '2026-11-22 18:00:40'),
-(3, 4, 'uploads/products/bot-bap-bien-hoa.jpg', 1, '2026-11-22 18:00:40'),
 (4, 5, 'uploads/products/yen-mach-can-det.jpg', 1, '2026-11-22 18:00:40'),
 (5, 6, 'uploads/products/bot-gao-nep.jpg', 1, '2026-11-22 18:00:40'),
 (6, 9, 'uploads/products/bot-mi-nguyen-cam.jpg', 1, '2026-11-22 18:00:40'),
@@ -834,7 +831,6 @@ INSERT INTO `product_images` (`id`, `product_id`, `image_path`, `is_primary`, `c
 (10, 15, 'uploads/products/mat-ong-hoa-nhan.jpg', 1, '2026-11-22 18:00:40'),
 (11, 16, 'uploads/products/siro-phong.jpg', 1, '2026-11-22 18:00:40'),
 (12, 17, 'uploads/products/mach-nha.jpg', 1, '2026-11-22 18:00:40'),
-(13, 18, 'uploads/products/golden-syrup.jpg', 1, '2026-11-22 18:00:40'),
 (14, 19, 'uploads/products/bo-lat-anchor.jpg', 1, '2026-11-22 18:00:40'),
 (15, 20, 'uploads/products/bo-man-anchor.jpg', 1, '2026-11-22 18:00:40'),
 (16, 23, 'uploads/products/margarine.jpg', 1, '2026-11-22 18:00:40'),
@@ -862,11 +858,27 @@ INSERT INTO `product_images` (`id`, `product_id`, `image_path`, `is_primary`, `c
 (38, 52, 'uploads/products/trung-ga-ta.jpg', 1, '2026-11-22 18:00:40'),
 (40, 54, 'uploads/products/socola-den-callebaut.jpg', 1, '2026-11-22 18:00:40'),
 (42, 58, 'uploads/products/nho-kho.jpg', 1, '2026-11-22 18:00:40'),
-(43, 59, 'uploads/products/dua-say-soi.jpg', 1, '2026-11-22 18:00:40'),
 (44, 60, 'uploads/products/nam-viet-quat-say.jpg', 1, '2026-11-22 18:00:40'),
 (48, 19, 'uploads/products/bo-lat-anchor-2.jpg', 0, '2026-11-22 18:00:40'),
 (49, 29, 'uploads/products/giay-nen-nuong-banh-2.jpg', 0, '2026-11-22 18:00:40'),
-(50, 53, 'uploads/products/socola-chip-ban-ngot-2.jpg', 0, '2026-11-22 18:00:40');
+(50, 53, 'uploads/products/socola-chip-ban-ngot-2.jpg', 0, '2026-11-22 18:00:40'),
+(51, 14, 'uploads/products/7c60c9ef48025a89ed7af29dfdae1b2c.jpg', 0, '2026-11-26 06:41:08'),
+(53, 14, 'uploads/products/788903736f2f860783cc15af7db73bd1.jpg', 0, '2026-11-26 06:41:08'),
+(54, 14, 'uploads/products/cf35a75beac8efebf7c3da88c13df7ed.jpg', 0, '2026-11-26 06:41:34'),
+(55, 63, 'uploads/products/fe03313b996b1736d68e522b83da16d3.jpg', 0, '2026-11-26 06:51:13'),
+(56, 63, 'uploads/products/c0e3e17458f4f0bbdeec91a4563c904b.jpg', 0, '2026-11-26 06:51:13'),
+(57, 63, 'uploads/products/0be87368e4c01d22d705655607c41a25.webp', 0, '2026-11-26 06:51:13'),
+(58, 66, 'uploads/products/bb58d985cefe626f7710383581072311.jpg', 0, '2026-11-26 06:52:43'),
+(59, 66, 'uploads/products/f1849ec7090949135986e9847de43bb7.jpg', 0, '2026-11-26 06:52:43'),
+(60, 66, 'uploads/products/0644d70c0decccd25049c74f0e31cf04.jpg', 0, '2026-11-26 06:52:43'),
+(61, 65, 'uploads/products/fc8614d21ec921329d0aff80421a0aa4.webp', 0, '2026-11-26 06:54:11'),
+(62, 65, 'uploads/products/782a5b943c9dae1b2ca18315e20d56cc.jpg', 0, '2026-11-26 06:54:11'),
+(63, 64, 'uploads/products/aab8774e67d82df604a38a01ab52e1c7.jpg', 0, '2026-11-26 06:55:32'),
+(64, 64, 'uploads/products/80082918c61b3b65cf76b7389787843f.jpg', 0, '2026-11-26 06:55:32'),
+(65, 64, 'uploads/products/1834bbabccd25e573ef022ca5329aa68.jpg', 0, '2026-11-26 06:55:32'),
+(66, 18, 'uploads/products/0ff6b7bf856cc73f28c55b6df40ee023.jpg', 0, '2026-11-26 11:06:06'),
+(67, 18, 'uploads/products/0ad20ef30d206aa63f24741c72e0088b.jpg', 0, '2026-11-26 11:06:06'),
+(68, 59, 'uploads/products/3140a811f8d1dbf3a5be08f13f539b7d.jpg', 0, '2026-11-26 11:08:02');
 
 -- --------------------------------------------------------
 
@@ -885,7 +897,7 @@ CREATE TABLE `reviews` (
   `admin_replied_at` timestamp NULL DEFAULT NULL,
   `created_at` timestamp NOT NULL DEFAULT current_timestamp(),
   `updated_at` timestamp NOT NULL DEFAULT current_timestamp() ON UPDATE current_timestamp()
-) ;
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
 --
 -- Đang đổ dữ liệu cho bảng `reviews`
@@ -966,7 +978,8 @@ INSERT INTO `reviews` (`id`, `user_id`, `product_id`, `rating`, `comment`, `is_h
 (72, 4, 26, 5, 'Dụng cụ chắc chắn, dùng rất tiện.', 0, NULL, NULL, '2026-10-19 08:40:00', '2026-10-19 08:40:00'),
 (73, 4, 9, 5, 'Chất lượng ổn định, mình mua lại nhiều lần.', 0, NULL, NULL, '2026-10-23 02:40:00', '2026-10-23 02:40:00'),
 (74, 8, 52, 4, 'Hàng tươi, hạn dùng dài, đóng gói cẩn thận.', 0, NULL, NULL, '2026-11-07 04:40:00', '2026-11-07 04:40:00'),
-(75, 8, 7, 5, 'Đóng gói chắc chắn, bột trắng mịn không vón cục.', 0, NULL, NULL, '2026-11-14 04:40:00', '2026-11-14 04:40:00');
+(75, 8, 7, 5, 'Đóng gói chắc chắn, bột trắng mịn không vón cục.', 0, NULL, NULL, '2026-11-14 04:40:00', '2026-11-14 04:40:00'),
+(76, 3, 9, 4, 'Mấy lần trước đặt thì nhiều mà lần này mình đặt nhiều sản phẩm cùng lúc thì đơn to không đảm bảo có bị vỡ ở thùng hàng may hàng bên trong không bị sao', 0, NULL, NULL, '2026-11-26 09:00:07', '2026-11-26 09:00:07');
 
 -- --------------------------------------------------------
 
@@ -1184,19 +1197,19 @@ ALTER TABLE `banners`
 -- AUTO_INCREMENT cho bảng `brands`
 --
 ALTER TABLE `brands`
-  MODIFY `id` bigint(20) UNSIGNED NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=14;
+  MODIFY `id` bigint(20) UNSIGNED NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=17;
 
 --
 -- AUTO_INCREMENT cho bảng `carts`
 --
 ALTER TABLE `carts`
-  MODIFY `id` bigint(20) UNSIGNED NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=14;
+  MODIFY `id` bigint(20) UNSIGNED NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=15;
 
 --
 -- AUTO_INCREMENT cho bảng `cart_items`
 --
 ALTER TABLE `cart_items`
-  MODIFY `id` bigint(20) UNSIGNED NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=46;
+  MODIFY `id` bigint(20) UNSIGNED NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=50;
 
 --
 -- AUTO_INCREMENT cho bảng `categories`
@@ -1214,25 +1227,25 @@ ALTER TABLE `contacts`
 -- AUTO_INCREMENT cho bảng `notifications`
 --
 ALTER TABLE `notifications`
-  MODIFY `id` bigint(20) UNSIGNED NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=3;
+  MODIFY `id` bigint(20) UNSIGNED NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=8;
 
 --
 -- AUTO_INCREMENT cho bảng `orders`
 --
 ALTER TABLE `orders`
-  MODIFY `id` bigint(20) UNSIGNED NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=49;
+  MODIFY `id` bigint(20) UNSIGNED NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=50;
 
 --
 -- AUTO_INCREMENT cho bảng `order_items`
 --
 ALTER TABLE `order_items`
-  MODIFY `id` bigint(20) UNSIGNED NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=146;
+  MODIFY `id` bigint(20) UNSIGNED NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=147;
 
 --
 -- AUTO_INCREMENT cho bảng `order_status_histories`
 --
 ALTER TABLE `order_status_histories`
-  MODIFY `id` bigint(20) UNSIGNED NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=179;
+  MODIFY `id` bigint(20) UNSIGNED NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=183;
 
 --
 -- AUTO_INCREMENT cho bảng `password_resets`
@@ -1250,13 +1263,13 @@ ALTER TABLE `products`
 -- AUTO_INCREMENT cho bảng `product_images`
 --
 ALTER TABLE `product_images`
-  MODIFY `id` bigint(20) UNSIGNED NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=51;
+  MODIFY `id` bigint(20) UNSIGNED NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=69;
 
 --
 -- AUTO_INCREMENT cho bảng `reviews`
 --
 ALTER TABLE `reviews`
-  MODIFY `id` bigint(20) UNSIGNED NOT NULL AUTO_INCREMENT;
+  MODIFY `id` bigint(20) UNSIGNED NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=77;
 
 --
 -- AUTO_INCREMENT cho bảng `users`
