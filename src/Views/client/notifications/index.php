@@ -8,13 +8,17 @@ partial('hero', ['heroTitle' => 'Thông báo', 'crumbs' => [['Trang chủ', url(
         $rawLink = trim((string) ($n['link'] ?? ''));
         $tag = $rawLink !== '' ? 'a' : 'div';
         $resolvedLink = $rawLink === '' ? '' : (preg_match('#^https?://#i', $rawLink) ? $rawLink : url(ltrim($rawLink, '/')));
-        $href = $resolvedLink !== '' ? ' href="' . e($resolvedLink) . '"' : ''; ?>
+        $href = $resolvedLink !== '' ? ' href="' . e($resolvedLink) . '"' : '';
+        $createdAt = (string) ($n['created_at'] ?? '');
+        $formattedTime = $createdAt !== '' ? date('H:i d/m/Y', strtotime($createdAt)) : ''; ?>
         <<?= $tag ?> class="bh-panel bh-notif mb-3"<?= $href ?>>
             <span class="bh-notif__icon"><i class="bi <?= e(notification_icon((string) $n['type'])) ?>"></i></span>
             <div class="flex-grow-1 min-w-0">
                 <div class="d-flex justify-content-between gap-2 flex-wrap">
                     <strong><?= e($n['title']) ?></strong>
-                    <small class="bh-muted"><?= e(time_ago((string) $n['created_at'])) ?></small>
+                    <?php if ($formattedTime !== '') : ?>
+                        <small class="bh-muted"><?= e($formattedTime) ?></small>
+                    <?php endif; ?>
                 </div>
                 <?php if ($n['message'] !== null && $n['message'] !== '') : ?>
                     <p class="mb-0 mt-1 small bh-muted"><?= e($n['message']) ?></p>

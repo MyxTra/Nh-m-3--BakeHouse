@@ -72,7 +72,12 @@ partial('hero', [
                 <div id="bhMyReviewView">
                     <div class="d-flex justify-content-between align-items-start flex-wrap gap-2">
                         <div>
-                            <h5 class="mb-1">Đánh giá của bạn</h5>
+                            <div class="d-flex align-items-center gap-2 flex-wrap mb-1">
+                                <h5 class="mb-0">Đánh giá của bạn</h5>
+                                <?php if (!empty($myReview['created_at'])) : ?>
+                                    <small class="bh-muted">· <?= e(date('d/m/Y', strtotime((string) $myReview['created_at']))) ?></small>
+                                <?php endif; ?>
+                            </div>
                             <?= render_stars((float) $myReview['rating']) ?>
                             <p class="mb-0 mt-2"><?= nl2br(e($myReview['comment'] ?? '')) ?></p>
                         </div>
@@ -82,6 +87,12 @@ partial('hero', [
                             </button>
                         </div>
                     </div>
+                    <?php if (!empty($myReview['admin_reply'])) : ?>
+                        <div class="mt-3 ps-3 border-start border-3" style="border-color: var(--bh-color-caramel) !important;">
+                            <strong class="small text-uppercase" style="color: var(--bh-color-caramel-text)">Phản hồi từ BakeHouse</strong>
+                            <p class="mb-0 mt-1 small"><?= nl2br(e($myReview['admin_reply'])) ?></p>
+                        </div>
+                    <?php endif; ?>
                 </div>
 
                 <div id="bhEditReviewForm" class="d-none">

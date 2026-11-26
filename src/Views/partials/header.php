@@ -63,12 +63,16 @@ $recentNotifications = $user ? notification_recent(6) : [];
                                 $rawLink = trim((string) ($n['link'] ?? ''));
                                 $notifHref = $rawLink === ''
                                     ? url('notifications')
-                                    : (preg_match('#^https?://#i', $rawLink) ? $rawLink : url(ltrim($rawLink, '/'))); ?>
+                                    : (preg_match('#^https?://#i', $rawLink) ? $rawLink : url(ltrim($rawLink, '/')));
+                                $createdAt = (string) ($n['created_at'] ?? '');
+                                $formattedTime = $createdAt !== '' ? date('H:i d/m/Y', strtotime($createdAt)) : ''; ?>
                                 <a class="bh-notif-menu__item<?= (int) $n['is_read'] === 0 ? ' is-unread' : '' ?>" href="<?= e($notifHref) ?>">
                                     <span class="bh-notif-menu__icon"><i class="bi <?= e(notification_icon((string) $n['type'])) ?>"></i></span>
                                     <span class="min-w-0">
-                                        <span class="bh-notif-menu__title"><?= e($n['title']) ?></span><br>
-                                        <small class="bh-notif-menu__time"><?= e(time_ago((string) $n['created_at'])) ?></small>
+                                        <span class="bh-notif-menu__title"><?= e($n['title']) ?></span>
+                                        <?php if ($formattedTime !== '') : ?>
+                                            <br><small class="bh-notif-menu__time"><?= e($formattedTime) ?></small>
+                                        <?php endif; ?>
                                     </span>
                                 </a>
                             <?php endforeach; ?>
